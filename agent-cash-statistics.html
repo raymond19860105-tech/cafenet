@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>代理出入金統計 - SYSTEM</title>
+  <style>
+    :root { color-scheme: light; --bg: #eef3f8; --surface: #fff; --line: #dce3ea; --line-strong: #c7d1dc; --text: #172121; --muted: #6a747e; --blue: #5961cf; --blue-strong: #4852bd; --green: #0f8a3b; --red: #d10000; --amber: #a16207; --shadow: 0 16px 42px rgba(23,33,33,.12); --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); color: var(--text); font-family: var(--font); letter-spacing: 0; }
+    body { margin: 0; min-height: 100vh; }
+    button, input, select, textarea { font: inherit; letter-spacing: 0; }
+    button { cursor: pointer; }
+    .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 208px minmax(0, 1fr); }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); position: relative; z-index: 20; }
+    .sidebar-logo { padding: 10px 16px 8px; color: #5867d8; font-size: 38px; font-weight: 900; line-height: 1; }
+    .sidebar-menu { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 16px; }
+    .menu-item, .submenu-item { width: 100%; min-height: 44px; border: 0; background: transparent; color: #2f3538; text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 16px; font-size: 14px; }
+    .menu-label { display: inline-flex; align-items: center; gap: 12px; }
+    .menu-drag { color: #7d858d; font-size: 16px; }
+    .menu-badge, .submenu-badge { min-width: 28px; height: 20px; padding: 0 7px; border-radius: 999px; background: #d10000; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+    .submenu { padding: 4px 0 8px; }
+    .submenu-item { justify-content: flex-start; gap: 10px; padding-left: 36px; position: relative; }
+    .submenu-item.active { color: var(--blue); background: #e8eef5; }
+    .app-main { min-width: 0; }
+    .workspace-header { height: 50px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; }
+    .menu-toggle { width: 32px; height: 32px; border: 0; background: transparent; color: #4b5563; display: grid; place-items: center; }
+    .workspace-user { display: inline-flex; align-items: center; gap: 18px; color: #666; font-size: 14px; }
+    .tab-strip { min-height: 34px; background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: flex-end; padding-left: 4px; }
+    .page-tab { height: 28px; border: 0; background: var(--blue); color: #fff; padding: 0 10px; font-size: 13px; }
+    .main { padding: 24px; }
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    h1 { margin: 0; color: #6b737c; font-size: 22px; font-weight: 600; }
+    h2 { margin: 0; font-size: 14px; color: #4b5563; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; min-width: min(100%, 620px); }
+    .metric { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; color: var(--muted); font-size: 12px; }
+    .metric strong { display: block; margin-top: 4px; color: var(--text); font-size: 18px; }
+    .surface { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+    .page-actions, .filter-head, .table-toolbar, .applied-surface { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .page-actions { margin-bottom: 12px; }
+    .filter-surface { padding: 16px; margin-bottom: 12px; }
+    .filter-head { margin-bottom: 14px; }
+    .filter-actions, .bulk-actions, .row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-grid { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 12px; }
+    .more-grid { margin-top: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 800; }
+    input, select, textarea { width: 100%; min-height: 36px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 10px; background: #fff; color: var(--text); outline: none; }
+    textarea { min-height: 90px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(89,97,207,.14); }
+    .button { min-height: 34px; border: 1px solid var(--line-strong); border-radius: 6px; background: #fff; color: #374151; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; font-weight: 800; }
+    .button.primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+    .button.danger { border-color: #fecaca; color: #b91c1c; }
+    .button:disabled { cursor: not-allowed; opacity: .45; }
+    .applied-surface { padding: 12px 14px; margin-bottom: 12px; }
+    .applied-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .applied-title { font-weight: 900; }
+    .result-count { color: var(--muted); font-size: 13px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip, .empty-chip { border: 1px solid #cfd8e3; border-radius: 999px; padding: 4px 9px; background: #f8fafc; color: #42505c; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .chip button { border: 0; background: transparent; color: #6b7280; padding: 0; }
+    .table-surface { overflow: hidden; }
+    .table-toolbar { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .selected-count { color: var(--muted); font-size: 13px; }
+    .table-scroll { overflow: auto; }
+    table { width: 100%; min-width: 1040px; border-collapse: separate; border-spacing: 0; }
+    th, td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 10px; text-align: center; font-size: 14px; vertical-align: middle; }
+    th { background: #eee; color: #6a6f75; font-weight: 900; white-space: nowrap; }
+    td { background: #fff; color: #5b6269; }
+    tr:nth-child(even) td { background: #fbfbfc; }
+    .check-col { width: 44px; }
+    .primary-cell { text-align: left; color: #1f2937; font-weight: 900; }
+    .subline { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 500; }
+    .tag { min-width: 52px; min-height: 24px; padding: 3px 9px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; background: #eef2ff; color: #3949ab; }
+    .tag.green { background: #e9f8ee; color: #0f8a3b; }
+    .tag.red { background: #fff0f0; color: #d10000; }
+    .tag.amber { background: #fff7e6; color: #a16207; }
+    .copy-cell { display: inline-flex; align-items: center; gap: 6px; max-width: 180px; }
+    .copy-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-button { width: 26px; height: 26px; border: 0; background: transparent; color: #3b97ff; display: inline-grid; place-items: center; }
+    .copy-button.copied { color: var(--green); }
+    .card-list { display: none; padding: 12px; gap: 10px; }
+    .data-card { border: 1px solid var(--line); border-radius: 6px; padding: 12px; background: #fff; }
+    .card-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .card-title strong { display: block; }
+    .card-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .card-meta-item { border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+    .card-meta-item span { color: var(--muted); font-size: 12px; display: block; }
+    .card-meta-item strong { display: block; margin-top: 2px; word-break: break-word; }
+    .empty-state { display: none; padding: 28px; text-align: center; color: var(--muted); }
+    .drawer-backdrop, .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.42); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 1000; }
+    .drawer-backdrop.is-open, .modal-backdrop.is-open { opacity: 1; pointer-events: auto; }
+    .drawer, .modal { position: fixed; right: 0; top: 0; bottom: 0; width: min(860px, 92vw); background: #fff; box-shadow: var(--shadow); transform: translateX(100%); transition: transform .2s ease; z-index: 1001; display: flex; flex-direction: column; }
+    .modal { left: 50%; right: auto; top: 50%; bottom: auto; width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); transform: translate(-50%, calc(-50% + 20px)); opacity: 0; pointer-events: none; border-radius: 6px; }
+    .drawer.is-open { transform: translateX(0); }
+    .modal.is-open { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+    .drawer-head, .modal-head { min-height: 58px; border-bottom: 1px solid var(--line); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .drawer-body, .modal-body { padding: 16px; overflow: auto; }
+    .modal-footer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; display: flex; justify-content: flex-end; gap: 8px; }
+    .detail-grid, .edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .detail-item { border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+    .detail-item span { display: block; color: var(--muted); font-size: 12px; }
+    .detail-item strong { display: block; margin-top: 4px; word-break: break-word; }
+    .edit-form { display: grid; gap: 12px; }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 1800; padding: 12px 16px; border-radius: 8px; background: #1f2937; color: #fff; box-shadow: 0 10px 28px rgba(15,23,42,.18); opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; pointer-events: none; }
+    .toast.is-open { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1100px) { .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 820px) {
+      .app-shell { display: block; }
+      .sidebar { position: sticky; top: 0; min-height: 54px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .sidebar-logo { font-size: 28px; padding: 12px 54px 10px 16px; }
+      .sidebar-menu { display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: calc(100vh - 54px); overflow-y: auto; background: #fff; box-shadow: 0 18px 34px rgba(23,33,33,.16); z-index: 60; }
+      .sidebar.is-mobile-open .sidebar-menu { display: flex; }
+      .workspace-header { margin-top: -54px; background: transparent; border: 0; justify-content: flex-end; }
+      .menu-toggle { position: absolute; right: 12px; top: 11px; z-index: 70; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+      .workspace-user { display: none; }
+      .tab-strip { margin-top: 54px; }
+      .main { padding: 16px; }
+      .page-head { flex-direction: column; }
+      .metrics, .filter-grid, .detail-grid, .edit-grid, .card-meta { grid-template-columns: 1fr; width: 100%; min-width: 0; }
+      .table-scroll { display: none; }
+      .card-list { display: grid; }
+      .button { min-height: 38px; }
+      .drawer, .modal { width: 100vw; max-width: 100vw; }
+      .modal { width: calc(100vw - 24px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="左側菜單">
+      <div class="sidebar-logo">SYSTEM</div>
+      <nav class="sidebar-menu">
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>會員管理</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="member-account.html">會員帳戶</a>
+          <a class="submenu-item" href="member-wallet.html">會員錢包</a>
+          <a class="submenu-item" href="member-labels.html">會員標籤</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>代理管理</span><span class="menu-badge">19</span><span>⌃</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="agent-merchant.html">代理商戶</a>
+          <a class="submenu-item" href="agent-wallet.html">代理錢包</a>
+          <a class="submenu-item" href="agent-topup-request.html">上分請求</a>
+          <a class="submenu-item" href="agent-topup-approval.html">上分請求審批<span class="submenu-badge">19</span></a>
+          <a class="submenu-item" href="agent-auto-replenish.html">自動補分</a>
+          <a class="submenu-item active" href="agent-cash-statistics.html">代理出入金統計</a>
+          <a class="submenu-item" href="agent-revenue-report.html">代理營收報表</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲商管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲管理</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="game-list.html">遊戲清單</a>
+          <a class="submenu-item" href="index.html">遊戲接入</a>
+          <a class="submenu-item" href="game-lobby-list.html">遊戲大廳清單</a>
+          <button class="submenu-item" type="button" data-coming-soon="遊戲大廳接入">遊戲大廳接入</button>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>內容管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>運營系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>支付系統</span><span class="menu-badge">1</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>財務系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>系統</span><span>⌄</span></button>
+      </nav>
+    </aside>
+    <div class="app-main">
+      <header class="workspace-header">
+        <button class="menu-toggle" type="button" aria-label="展開或收合菜單" aria-expanded="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h12"></path><path d="M4 18h16"></path></svg></button>
+        <div class="workspace-user"><span>pl_raymond</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+      </header>
+      <div class="tab-strip"><button class="page-tab" type="button">● 代理出入金統計 ×</button></div>
+      <main class="main">
+        <div class="page-head">
+          <h1>代理出入金統計</h1>
+          <div class="metrics" id="metrics"></div>
+        </div>
+        <div class="page-actions">
+          <div class="filter-actions">
+            <button class="button" type="button" id="refreshButton"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M18 2v4h4"></path><path d="M6 22v-4H2"></path></svg>刷新</button>
+            <button class="button" type="button" id="toggleFilters" aria-expanded="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.5V20l4 1v-8.5Z"></path></svg>篩選</button>
+          </div>
+          <div class="filter-actions" id="primaryActions"></div>
+        </div>
+        <section class="surface filter-surface" id="filterPanel" aria-label="篩選">
+          <form id="filterForm">
+            <div class="filter-head">
+              <h2>快速篩選</h2>
+              <div class="filter-actions">
+                <button class="button primary" type="submit"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3"></path><circle cx="11" cy="11" r="8"></circle></svg>搜索</button>
+                <button class="button" type="button" id="moreToggle" aria-expanded="false">更多篩選</button>
+                <button class="button" type="button" id="resetFilters">重置</button>
+              </div>
+            </div>
+            <div class="filter-grid" id="quickFilters"></div>
+            <div class="filter-grid more-grid" id="moreFilters" hidden></div>
+          </form>
+        </section>
+        <section class="surface applied-surface" aria-label="已套用篩選條件">
+          <div class="applied-left">
+            <div class="applied-title">已套用篩選條件（<span id="filterCount">0</span>）</div>
+            <div class="result-count">共 <strong id="resultCount">0</strong> 筆結果</div>
+            <div class="chips" id="activeChips"></div>
+          </div>
+          <button class="button" type="button" id="clearApplied">清除全部</button>
+        </section>
+        <section class="surface table-surface" aria-label="代理出入金統計列表">
+          <div class="table-toolbar">
+            <div class="bulk-actions" id="bulkActions"></div>
+            <button class="button" type="button" id="sortUpdated"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="M12 4v16"></path></svg>更新時間</button>
+          </div>
+          <div class="table-scroll"><table><thead><tr id="tableHead"></tr></thead><tbody id="tableRows"></tbody></table></div>
+          <div class="card-list" id="cardList"></div>
+          <div class="empty-state" id="emptyState"><strong>沒有符合條件的資料</strong><br><span>調整篩選條件後會重新整理列表。</span></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="detailDrawer" aria-label="詳情" aria-hidden="true">
+    <div class="drawer-head"><div><strong id="drawerTitle">詳情</strong><span class="subline" id="drawerSub">-</span></div><button class="button" type="button" id="closeDrawer">關閉</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <section class="modal" id="modal" aria-hidden="true">
+    <div class="modal-head"><strong id="modalTitle">操作</strong><button class="button" type="button" id="closeModal">關閉</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </section>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    const PAGE_KEY = "cash";
+    const pageConfigs = {"merchant":{"title":"代理商戶","entity":"代理","primaryAction":"新增代理","selectable":true,"bulkActions":[{"action":"enable","label":"批次啟用"},{"action":"disable","label":"批次停用"}],"metrics":[{"label":"代理數","type":"count"},{"label":"啟用中","type":"active"},{"label":"會員數","type":"members"},{"label":"總餘額","type":"balance"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"代理帳號 / 名稱 / ID"},{"key":"level","label":"代理層級","type":"select"},{"key":"status","label":"狀態","type":"select"},{"key":"parent","label":"上級代理","type":"select"},{"key":"risk","label":"風控狀態","type":"select","advanced":true},{"key":"createdFrom","label":"建立時間起","type":"date","target":"createdAt","advanced":true},{"key":"createdTo","label":"建立時間迄","type":"date","target":"createdAt","advanced":true}],"columns":[{"key":"id","label":"代理ID","type":"copy"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"level","label":"層級","type":"tag"},{"key":"parent","label":"上級代理"},{"key":"status","label":"狀態","type":"status"},{"key":"balance","label":"錢包餘額","type":"money"},{"key":"creditLimit","label":"信用額度","type":"money"},{"key":"commissionRate","label":"分潤%","type":"percent"},{"key":"members","label":"會員數","type":"number"},{"key":"updatedAt","label":"更新時間","type":"dateTime"}],"formFields":[{"key":"account","label":"代理帳號","type":"text","required":true},{"key":"name","label":"代理名稱","type":"text","required":true},{"key":"level","label":"代理層級","type":"select","options":["總代理","一級代理","二級代理"]},{"key":"parent","label":"上級代理","type":"select","options":["System","ag_east_001","ag_global_008"]},{"key":"status","label":"狀態","type":"select","options":["啟用","停用"]},{"key":"creditLimit","label":"信用額度","type":"number"},{"key":"commissionRate","label":"分潤%","type":"number"},{"key":"risk","label":"風控狀態","type":"select","options":["正常","觀察","限制"]},{"key":"remark","label":"備註","type":"textarea"}]},"wallet":{"title":"代理錢包","entity":"錢包","selectable":true,"bulkActions":[{"action":"batchDeposit","label":"批次上分"},{"action":"batchWithdraw","label":"批次下分"}],"metrics":[{"label":"錢包數","type":"count"},{"label":"有餘額","type":"funded"},{"label":"總餘額","type":"balance"},{"label":"幣種","type":"currency"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"代理帳號 / 名稱 / ID"},{"key":"currency","label":"幣種","type":"select"},{"key":"balanceMin","label":"最小餘額","type":"number","target":"balance"},{"key":"balanceMax","label":"最大餘額","type":"number","target":"balance"},{"key":"updatedFrom","label":"更新時間起","type":"date","target":"updatedAt","advanced":true},{"key":"updatedTo","label":"更新時間迄","type":"date","target":"updatedAt","advanced":true}],"columns":[{"key":"agentNo","label":"代理序號","type":"copy"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"balance","label":"餘額","type":"money"},{"key":"available","label":"可用餘額","type":"money"},{"key":"frozen","label":"凍結","type":"money"},{"key":"todayDeposit","label":"今日上分","type":"money"},{"key":"todayWithdraw","label":"今日下分","type":"money"},{"key":"updatedAt","label":"更新時間","type":"dateTime"}]},"request":{"title":"上分請求","entity":"請求","primaryAction":"新增上分請求","selectable":true,"bulkActions":[{"action":"cancel","label":"批次取消"}],"metrics":[{"label":"請求數","type":"count"},{"label":"待審批","type":"pending"},{"label":"已通過","type":"approved"},{"label":"申請金額","type":"amount"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"請求單號 / 代理帳號"},{"key":"status","label":"狀態","type":"select"},{"key":"currency","label":"幣種","type":"select"},{"key":"createdFrom","label":"申請時間起","type":"date","target":"createdAt","advanced":true},{"key":"createdTo","label":"申請時間迄","type":"date","target":"createdAt","advanced":true}],"columns":[{"key":"id","label":"請求單號","type":"copy"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"amount","label":"申請金額","type":"money"},{"key":"status","label":"狀態","type":"status"},{"key":"applicant","label":"申請人"},{"key":"createdAt","label":"申請時間","type":"dateTime"},{"key":"remark","label":"備註"}],"formFields":[{"key":"account","label":"代理帳號","type":"select","options":["ag_east_001","ag_global_008","ag_hkmo_003","ag_jpkr_021"]},{"key":"name","label":"代理名稱","type":"text","required":true},{"key":"currency","label":"幣種","type":"select","options":["BRL","CNY","JPY","USDT"]},{"key":"amount","label":"申請金額","type":"number","required":true},{"key":"remark","label":"備註","type":"textarea","required":true}]},"approval":{"title":"上分請求審批","entity":"審批","selectable":true,"bulkActions":[{"action":"batchApprove","label":"批次通過"},{"action":"batchReject","label":"批次拒絕"}],"metrics":[{"label":"審批單","type":"count"},{"label":"待審批","type":"pending"},{"label":"已通過","type":"approved"},{"label":"待審金額","type":"pendingAmount"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"請求單號 / 代理帳號"},{"key":"status","label":"審批狀態","type":"select"},{"key":"currency","label":"幣種","type":"select"},{"key":"createdFrom","label":"申請時間起","type":"date","target":"createdAt","advanced":true},{"key":"createdTo","label":"申請時間迄","type":"date","target":"createdAt","advanced":true}],"columns":[{"key":"id","label":"審批單號","type":"copy"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"amount","label":"申請金額","type":"money"},{"key":"status","label":"狀態","type":"status"},{"key":"applicant","label":"申請人"},{"key":"reviewer","label":"審批人"},{"key":"createdAt","label":"申請時間","type":"dateTime"}]},"auto":{"title":"自動補分","entity":"補分規則","primaryAction":"新增補分規則","selectable":true,"bulkActions":[{"action":"enable","label":"批次啟用"},{"action":"disable","label":"批次停用"}],"metrics":[{"label":"規則數","type":"count"},{"label":"啟用中","type":"active"},{"label":"今日已補","type":"usedToday"},{"label":"日上限","type":"dailyLimit"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"規則 / 代理帳號"},{"key":"status","label":"狀態","type":"select"},{"key":"currency","label":"幣種","type":"select"},{"key":"updatedFrom","label":"更新時間起","type":"date","target":"updatedAt","advanced":true},{"key":"updatedTo","label":"更新時間迄","type":"date","target":"updatedAt","advanced":true}],"columns":[{"key":"id","label":"規則ID","type":"copy"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"threshold","label":"觸發餘額","type":"money"},{"key":"topupAmount","label":"補分金額","type":"money"},{"key":"dailyLimit","label":"每日上限","type":"money"},{"key":"usedToday","label":"今日已補","type":"money"},{"key":"status","label":"狀態","type":"status"},{"key":"updatedAt","label":"更新時間","type":"dateTime"}],"formFields":[{"key":"account","label":"代理帳號","type":"select","options":["ag_east_001","ag_global_008","ag_hkmo_003","ag_jpkr_021"]},{"key":"name","label":"代理名稱","type":"text","required":true},{"key":"currency","label":"幣種","type":"select","options":["BRL","CNY","JPY","USDT"]},{"key":"threshold","label":"觸發餘額","type":"number","required":true},{"key":"topupAmount","label":"補分金額","type":"number","required":true},{"key":"dailyLimit","label":"每日上限","type":"number","required":true},{"key":"status","label":"狀態","type":"select","options":["啟用","停用"]},{"key":"remark","label":"備註","type":"textarea"}]},"cash":{"title":"代理出入金統計","entity":"統計","exportAction":true,"selectable":false,"metrics":[{"label":"代理數","type":"count"},{"label":"總入金","type":"deposit"},{"label":"總出金","type":"withdraw"},{"label":"淨額","type":"net"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"代理帳號 / 名稱"},{"key":"currency","label":"幣種","type":"select"},{"key":"dateFrom","label":"日期起","type":"date","target":"date"},{"key":"dateTo","label":"日期迄","type":"date","target":"date"}],"columns":[{"key":"date","label":"日期","type":"date"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"deposit","label":"入金","type":"money"},{"key":"withdraw","label":"出金","type":"money"},{"key":"net","label":"淨額","type":"money"},{"key":"requestCount","label":"筆數","type":"number"},{"key":"updatedAt","label":"更新時間","type":"dateTime"}]},"revenue":{"title":"代理營收報表","entity":"報表","exportAction":true,"selectable":false,"metrics":[{"label":"代理數","type":"count"},{"label":"有效投注","type":"validBet"},{"label":"GGR","type":"ggr"},{"label":"平台收益","type":"profit"}],"filters":[{"key":"keyword","label":"關鍵字","type":"text","placeholder":"代理帳號 / 名稱"},{"key":"currency","label":"幣種","type":"select"},{"key":"periodFrom","label":"週期起","type":"date","target":"periodStart"},{"key":"periodTo","label":"週期迄","type":"date","target":"periodEnd"}],"columns":[{"key":"period","label":"週期"},{"key":"account","label":"代理帳號","primary":true},{"key":"name","label":"代理名稱"},{"key":"currency","label":"幣種","type":"tag"},{"key":"betAmount","label":"投注額","type":"money"},{"key":"validBet","label":"有效投注","type":"money"},{"key":"payout","label":"派彩","type":"money"},{"key":"ggr","label":"GGR","type":"money"},{"key":"rebate","label":"代理分潤","type":"money"},{"key":"profit","label":"平台收益","type":"money"},{"key":"margin","label":"收益率","type":"percent"}]}};
+    const sourceData = {"merchant":[{"id":"AG-1001","account":"ag_east_001","name":"東區總代理","level":"總代理","parent":"System","status":"啟用","balance":35800,"creditLimit":100000,"commissionRate":35,"members":1280,"risk":"正常","remark":"主力代理","createdAt":"2025-08-01 10:22:41","updatedAt":"2026-05-18 14:20:11"},{"id":"AG-1002","account":"ag_global_008","name":"Global Eight","level":"總代理","parent":"System","status":"啟用","balance":8800,"creditLimit":80000,"commissionRate":32,"members":642,"risk":"正常","remark":"-","createdAt":"2025-08-18 12:01:33","updatedAt":"2026-05-17 11:03:02"},{"id":"AG-1003","account":"ag_hkmo_003","name":"港澳渠道","level":"一級代理","parent":"ag_east_001","status":"啟用","balance":22100,"creditLimit":60000,"commissionRate":28,"members":413,"risk":"觀察","remark":"近期提款增加","createdAt":"2025-09-09 09:18:05","updatedAt":"2026-05-16 09:45:00"},{"id":"AG-1004","account":"ag_jpkr_021","name":"日韓渠道","level":"一級代理","parent":"ag_global_008","status":"停用","balance":1200,"creditLimit":30000,"commissionRate":25,"members":96,"risk":"限制","remark":"等待 KYC","createdAt":"2025-10-11 16:30:26","updatedAt":"2026-05-15 16:30:26"},{"id":"AG-1005","account":"ag_latam_019","name":"Latam Alpha","level":"二級代理","parent":"ag_east_001","status":"啟用","balance":14550,"creditLimit":45000,"commissionRate":22,"members":307,"risk":"正常","remark":"BRL 流量","createdAt":"2025-11-08 18:11:52","updatedAt":"2026-05-13 18:02:30"}],"wallet":[{"id":"AW-1001-BRL","agentNo":"1001","account":"ag_east_001","name":"東區總代理","currency":"BRL","balance":35800,"available":35200,"frozen":600,"todayDeposit":5000,"todayWithdraw":1200,"updatedAt":"2026-05-18 14:20:11"},{"id":"AW-1002-CNY","agentNo":"1002","account":"ag_global_008","name":"Global Eight","currency":"CNY","balance":8800,"available":8800,"frozen":0,"todayDeposit":3000,"todayWithdraw":0,"updatedAt":"2026-05-17 11:03:02"},{"id":"AW-1003-JPY","agentNo":"1003","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","balance":22100,"available":21000,"frozen":1100,"todayDeposit":10000,"todayWithdraw":500,"updatedAt":"2026-05-16 09:45:00"},{"id":"AW-1004-USDT","agentNo":"1004","account":"ag_jpkr_021","name":"日韓渠道","currency":"USDT","balance":1200,"available":900,"frozen":300,"todayDeposit":0,"todayWithdraw":0,"updatedAt":"2026-05-15 16:30:26"}],"request":[{"id":"TOP-20260518-001","account":"ag_east_001","name":"東區總代理","currency":"BRL","amount":5000,"status":"待審批","applicant":"pl_raymond","reviewer":"-","createdAt":"2026-05-18 11:20:15","updatedAt":"2026-05-18 11:20:15","remark":"週末活動備用金"},{"id":"TOP-20260518-002","account":"ag_global_008","name":"Global Eight","currency":"CNY","amount":3000,"status":"已通過","applicant":"admin","reviewer":"risk_depp","createdAt":"2026-05-18 10:05:40","updatedAt":"2026-05-18 10:45:31","remark":"日常補分"},{"id":"TOP-20260517-011","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","amount":10000,"status":"待審批","applicant":"pl_raymond","reviewer":"-","createdAt":"2026-05-17 17:15:22","updatedAt":"2026-05-17 17:15:22","remark":"VIP 活動"},{"id":"TOP-20260516-006","account":"ag_jpkr_021","name":"日韓渠道","currency":"USDT","amount":750,"status":"已拒絕","applicant":"admin","reviewer":"risk_depp","createdAt":"2026-05-16 13:28:19","updatedAt":"2026-05-16 14:02:08","remark":"資料不完整"}],"approval":[{"id":"APR-20260518-001","account":"ag_east_001","name":"東區總代理","currency":"BRL","amount":5000,"status":"待審批","applicant":"pl_raymond","reviewer":"-","createdAt":"2026-05-18 11:20:15","updatedAt":"2026-05-18 11:20:15","remark":"週末活動備用金"},{"id":"APR-20260517-011","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","amount":10000,"status":"待審批","applicant":"pl_raymond","reviewer":"-","createdAt":"2026-05-17 17:15:22","updatedAt":"2026-05-17 17:15:22","remark":"VIP 活動"},{"id":"APR-20260518-002","account":"ag_global_008","name":"Global Eight","currency":"CNY","amount":3000,"status":"已通過","applicant":"admin","reviewer":"risk_depp","createdAt":"2026-05-18 10:05:40","updatedAt":"2026-05-18 10:45:31","remark":"日常補分"}],"auto":[{"id":"AUTO-001","account":"ag_east_001","name":"東區總代理","currency":"BRL","threshold":5000,"topupAmount":10000,"dailyLimit":30000,"usedToday":10000,"status":"啟用","remark":"活動日使用","updatedAt":"2026-05-18 14:20:11"},{"id":"AUTO-002","account":"ag_global_008","name":"Global Eight","currency":"CNY","threshold":3000,"topupAmount":5000,"dailyLimit":15000,"usedToday":0,"status":"啟用","remark":"-","updatedAt":"2026-05-17 11:03:02"},{"id":"AUTO-003","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","threshold":8000,"topupAmount":12000,"dailyLimit":36000,"usedToday":12000,"status":"停用","remark":"審核後再開啟","updatedAt":"2026-05-16 09:45:00"}],"cash":[{"id":"STAT-001","date":"2026-05-18","account":"ag_east_001","name":"東區總代理","currency":"BRL","deposit":52000,"withdraw":18400,"net":33600,"requestCount":36,"updatedAt":"2026-05-18 23:59:00"},{"id":"STAT-002","date":"2026-05-18","account":"ag_global_008","name":"Global Eight","currency":"CNY","deposit":30000,"withdraw":26000,"net":4000,"requestCount":28,"updatedAt":"2026-05-18 23:59:00"},{"id":"STAT-003","date":"2026-05-17","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","deposit":48000,"withdraw":22000,"net":26000,"requestCount":31,"updatedAt":"2026-05-17 23:59:00"},{"id":"STAT-004","date":"2026-05-17","account":"ag_jpkr_021","name":"日韓渠道","currency":"USDT","deposit":9000,"withdraw":11200,"net":-2200,"requestCount":12,"updatedAt":"2026-05-17 23:59:00"}],"revenue":[{"id":"REV-001","period":"2026-05-01 ~ 2026-05-18","periodStart":"2026-05-01","periodEnd":"2026-05-18","account":"ag_east_001","name":"東區總代理","currency":"BRL","betAmount":1280000,"validBet":1186000,"payout":1043000,"ggr":143000,"rebate":50050,"profit":92950,"margin":7.84,"updatedAt":"2026-05-18 23:59:00"},{"id":"REV-002","period":"2026-05-01 ~ 2026-05-18","periodStart":"2026-05-01","periodEnd":"2026-05-18","account":"ag_global_008","name":"Global Eight","currency":"CNY","betAmount":860000,"validBet":801000,"payout":724000,"ggr":77000,"rebate":24640,"profit":52360,"margin":6.54,"updatedAt":"2026-05-18 23:59:00"},{"id":"REV-003","period":"2026-05-01 ~ 2026-05-18","periodStart":"2026-05-01","periodEnd":"2026-05-18","account":"ag_hkmo_003","name":"港澳渠道","currency":"JPY","betAmount":520000,"validBet":500000,"payout":478000,"ggr":22000,"rebate":6160,"profit":15840,"margin":3.17,"updatedAt":"2026-05-18 23:59:00"}]};
+    const config = pageConfigs[PAGE_KEY];
+    let records = JSON.parse(JSON.stringify(sourceData[PAGE_KEY]));
+    let filteredRecords = records.slice();
+    let selectedIds = new Set();
+    let sortDescending = true;
+
+    const currentPage = location.pathname.split("/").pop();
+    if (sessionStorage.getItem("systemAdminAuthenticated") !== "true") {
+      location.replace("login.html?next=" + encodeURIComponent(currentPage));
+    }
+
+    const form = document.getElementById("filterForm");
+    const rowsEl = document.getElementById("tableRows");
+    const headEl = document.getElementById("tableHead");
+    const cardListEl = document.getElementById("cardList");
+    const chipsEl = document.getElementById("activeChips");
+    const resultCountEl = document.getElementById("resultCount");
+    const filterCountEl = document.getElementById("filterCount");
+    const emptyStateEl = document.getElementById("emptyState");
+    const drawerEl = document.getElementById("detailDrawer");
+    const drawerBackdropEl = document.getElementById("drawerBackdrop");
+    const drawerBodyEl = document.getElementById("drawerBody");
+    const drawerTitleEl = document.getElementById("drawerTitle");
+    const drawerSubEl = document.getElementById("drawerSub");
+    const modalEl = document.getElementById("modal");
+    const modalBackdropEl = document.getElementById("modalBackdrop");
+    const modalTitleEl = document.getElementById("modalTitle");
+    const modalBodyEl = document.getElementById("modalBody");
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+
+    function now() {
+      const d = new Date();
+      const pad = (value) => String(value).padStart(2, "0");
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+    }
+
+    function formatMoney(value) {
+      return Number(value || 0).toLocaleString("zh-Hant", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatValue(value, type) {
+      if (type === "money") return formatMoney(value);
+      if (type === "percent") return escapeHtml(value) + "%";
+      if (type === "dateTime") return escapeHtml(value || "-");
+      return escapeHtml(value == null || value === "" ? "-" : value);
+    }
+
+    function tagClass(value) {
+      if (["啟用", "已通過", "顯示", "正常"].includes(value)) return "green";
+      if (["停用", "已拒絕", "已取消", "限制"].includes(value)) return "red";
+      if (["待審批", "觀察", "維護中"].includes(value)) return "amber";
+      return "";
+    }
+
+    function showToast(message, tone) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.background = tone === "warning" ? "#92400e" : tone === "danger" ? "#b91c1c" : "#1f2937";
+      toast.classList.add("is-open");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("is-open"), 1800);
+    }
+
+    function uniqueValues(key) {
+      return Array.from(new Set(records.map((item) => item[key]).filter(Boolean))).sort((a, b) => String(a).localeCompare(String(b), "zh-Hant"));
+    }
+
+    function fieldMarkup(field) {
+      const options = field.options || uniqueValues(field.key);
+      const id = "filter-" + field.key;
+      if (field.type === "select") {
+        return '<div class="field"><label for="' + id + '">' + escapeHtml(field.label) + '</label><select id="' + id + '" name="' + escapeHtml(field.key) + '"><option value="">全部</option>' + options.map((value) => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join("") + '</select></div>';
+      }
+      return '<div class="field"><label for="' + id + '">' + escapeHtml(field.label) + '</label><input id="' + id + '" name="' + escapeHtml(field.key) + '" type="' + (field.type === "date" ? "date" : field.type === "number" ? "number" : "search") + '" placeholder="' + escapeHtml(field.placeholder || field.label) + '"></div>';
+    }
+
+    function renderFilters() {
+      document.getElementById("quickFilters").innerHTML = config.filters.filter((field) => !field.advanced).map(fieldMarkup).join("");
+      const advanced = config.filters.filter((field) => field.advanced);
+      document.getElementById("moreFilters").innerHTML = advanced.map(fieldMarkup).join("");
+      document.getElementById("moreToggle").hidden = advanced.length === 0;
+    }
+
+    function recordText(record) {
+      return [record.id, record.account, record.name, record.agentNo, record.applicant, record.reviewer, record.remark].filter(Boolean).join(" ").toLowerCase();
+    }
+
+    function matchesFilter(record, filters) {
+      for (const field of config.filters) {
+        const value = String(filters[field.key] || "").trim();
+        if (!value) continue;
+        if (field.key === "keyword") {
+          if (!recordText(record).includes(value.toLowerCase())) return false;
+          continue;
+        }
+        if (field.type === "date") {
+          const target = String(record[field.target || field.key] || "").slice(0, 10);
+          if (field.key.endsWith("From") && target < value) return false;
+          if (field.key.endsWith("To") && target > value) return false;
+          if (!field.key.endsWith("From") && !field.key.endsWith("To") && target !== value) return false;
+          continue;
+        }
+        if (field.type === "number") {
+          const targetValue = Number(record[field.target || field.key] || 0);
+          if (field.key.endsWith("Min") && targetValue < Number(value)) return false;
+          if (field.key.endsWith("Max") && targetValue > Number(value)) return false;
+          continue;
+        }
+        if (String(record[field.key]) !== value) return false;
+      }
+      return true;
+    }
+
+    function metricValue(metric) {
+      const list = records;
+      if (metric.type === "count") return list.length;
+      if (metric.type === "active") return list.filter((item) => item.status === "啟用").length;
+      if (metric.type === "members") return list.reduce((sum, item) => sum + Number(item.members || 0), 0);
+      if (metric.type === "balance") return formatMoney(list.reduce((sum, item) => sum + Number(item.balance || 0), 0));
+      if (metric.type === "funded") return list.filter((item) => Number(item.balance || 0) > 0).length;
+      if (metric.type === "currency") return uniqueValues("currency").length;
+      if (metric.type === "pending") return list.filter((item) => item.status === "待審批").length;
+      if (metric.type === "approved") return list.filter((item) => item.status === "已通過").length;
+      if (metric.type === "amount") return formatMoney(list.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+      if (metric.type === "pendingAmount") return formatMoney(list.filter((item) => item.status === "待審批").reduce((sum, item) => sum + Number(item.amount || 0), 0));
+      if (metric.type === "usedToday") return formatMoney(list.reduce((sum, item) => sum + Number(item.usedToday || 0), 0));
+      if (metric.type === "dailyLimit") return formatMoney(list.reduce((sum, item) => sum + Number(item.dailyLimit || 0), 0));
+      if (metric.type === "deposit") return formatMoney(list.reduce((sum, item) => sum + Number(item.deposit || 0), 0));
+      if (metric.type === "withdraw") return formatMoney(list.reduce((sum, item) => sum + Number(item.withdraw || 0), 0));
+      if (metric.type === "net") return formatMoney(list.reduce((sum, item) => sum + Number(item.net || 0), 0));
+      if (metric.type === "validBet") return formatMoney(list.reduce((sum, item) => sum + Number(item.validBet || 0), 0));
+      if (metric.type === "ggr") return formatMoney(list.reduce((sum, item) => sum + Number(item.ggr || 0), 0));
+      if (metric.type === "profit") return formatMoney(list.reduce((sum, item) => sum + Number(item.profit || 0), 0));
+      return "-";
+    }
+
+    function renderMetrics() {
+      document.getElementById("metrics").innerHTML = config.metrics.map((metric) => '<div class="metric">' + escapeHtml(metric.label) + '<strong>' + escapeHtml(metricValue(metric)) + '</strong></div>').join("");
+    }
+
+    function renderPrimaryActions() {
+      const actions = [];
+      if (config.primaryAction) actions.push('<button class="button primary" type="button" data-create>' + escapeHtml(config.primaryAction) + '</button>');
+      if (config.exportAction) actions.push('<button class="button primary" type="button" data-export>匯出報表</button>');
+      document.getElementById("primaryActions").innerHTML = actions.join("");
+    }
+
+    function renderBulkActions() {
+      const el = document.getElementById("bulkActions");
+      if (!config.selectable) {
+        el.innerHTML = '<span class="selected-count">合計 <strong id="tableTotal">' + filteredRecords.length + '</strong> 件</span>';
+        return;
+      }
+      el.innerHTML = '<span class="selected-count">已選 <strong id="selectedCount">0</strong></span>' + (config.bulkActions || []).map((action) => '<button class="button" type="button" data-bulk="' + action.action + '" disabled>' + escapeHtml(action.label) + '</button>').join("");
+    }
+
+    function copyMarkup(value) {
+      return '<span class="copy-cell"><span class="copy-text" title="' + escapeHtml(value) + '">' + escapeHtml(value) + '</span><button class="copy-button" type="button" data-copy="' + escapeHtml(value) + '" aria-label="複製 ' + escapeHtml(value) + '"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button></span>';
+    }
+
+    function cellMarkup(record, column) {
+      const value = record[column.key];
+      if (column.type === "copy") return copyMarkup(value);
+      if (column.type === "status") return '<span class="tag ' + tagClass(value) + '">' + escapeHtml(value) + '</span>';
+      if (column.type === "tag") return '<span class="tag">' + escapeHtml(value) + '</span>';
+      if (column.primary) return '<span class="primary-cell">' + escapeHtml(value) + '<span class="subline">' + escapeHtml(record.id || record.account || "") + '</span></span>';
+      return formatValue(value, column.type);
+    }
+
+    function rowActions(record) {
+      const buttons = ['<button class="button" type="button" data-detail="' + escapeHtml(record.id) + '">詳情</button>'];
+      if (["merchant", "auto"].includes(PAGE_KEY)) buttons.unshift('<button class="button" type="button" data-edit="' + escapeHtml(record.id) + '">編輯</button>');
+      if (PAGE_KEY === "wallet") {
+        buttons.unshift('<button class="button primary" type="button" data-transfer="deposit" data-id="' + escapeHtml(record.id) + '">系統上分</button>');
+        buttons.push('<button class="button" type="button" data-transfer="withdraw" data-id="' + escapeHtml(record.id) + '">系統下分</button>');
+      }
+      if (PAGE_KEY === "request" && record.status === "待審批") buttons.push('<button class="button danger" type="button" data-cancel="' + escapeHtml(record.id) + '">取消</button>');
+      if (PAGE_KEY === "approval" && record.status === "待審批") {
+        buttons.unshift('<button class="button primary" type="button" data-review="approve" data-id="' + escapeHtml(record.id) + '">通過</button>');
+        buttons.push('<button class="button danger" type="button" data-review="reject" data-id="' + escapeHtml(record.id) + '">拒絕</button>');
+      }
+      if (PAGE_KEY === "auto") buttons.push('<button class="button" type="button" data-toggle="' + escapeHtml(record.id) + '">' + (record.status === "啟用" ? "停用" : "啟用") + '</button>');
+      return '<div class="row-actions">' + buttons.join("") + '</div>';
+    }
+
+    function renderRows() {
+      headEl.innerHTML = (config.selectable ? '<th class="check-col"><input id="selectAll" type="checkbox" aria-label="全選"></th>' : "") + config.columns.map((column) => '<th>' + escapeHtml(column.label) + '</th>').join("") + '<th>操作</th>';
+      rowsEl.innerHTML = filteredRecords.map((record) => '<tr>' + (config.selectable ? '<td class="check-col"><input class="row-check" type="checkbox" data-id="' + escapeHtml(record.id) + '" ' + (selectedIds.has(record.id) ? "checked" : "") + '></td>' : "") + config.columns.map((column) => '<td>' + cellMarkup(record, column) + '</td>').join("") + '<td>' + rowActions(record) + '</td></tr>').join("");
+      cardListEl.innerHTML = filteredRecords.map((record) => '<article class="data-card"><div class="card-head"><div class="card-title"><strong>' + escapeHtml(record.account || record.id) + '</strong><span class="subline">' + escapeHtml(record.name || config.title) + '</span></div>' + (record.status ? '<span class="tag ' + tagClass(record.status) + '">' + escapeHtml(record.status) + '</span>' : "") + '</div><div class="card-meta">' + config.columns.slice(0, 6).map((column) => '<div class="card-meta-item"><span>' + escapeHtml(column.label) + '</span><strong>' + (column.type === "copy" ? escapeHtml(record[column.key]) : cellMarkup(record, column)) + '</strong></div>').join("") + '</div>' + rowActions(record) + '</article>').join("");
+      emptyStateEl.style.display = filteredRecords.length ? "none" : "block";
+      updateSelectionState();
+    }
+
+    function renderChips(filters) {
+      const active = Object.entries(filters).filter(([, value]) => value !== "");
+      filterCountEl.textContent = active.length;
+      chipsEl.innerHTML = active.length ? active.map(([key, value]) => {
+        const field = config.filters.find((item) => item.key === key);
+        return '<span class="chip"><span>' + escapeHtml((field ? field.label : key) + "：" + value) + '</span><button type="button" data-remove-filter="' + escapeHtml(key) + '">×</button></span>';
+      }).join("") : '<span class="empty-chip">無套用條件</span>';
+    }
+
+    function applyFilters() {
+      const filters = Object.fromEntries(new FormData(form).entries());
+      filteredRecords = records.filter((record) => matchesFilter(record, filters)).sort((a, b) => String(a.updatedAt || a.createdAt || a.date || "").localeCompare(String(b.updatedAt || b.createdAt || b.date || "")) * (sortDescending ? -1 : 1));
+      selectedIds = new Set(Array.from(selectedIds).filter((id) => filteredRecords.some((item) => item.id === id)));
+      resultCountEl.textContent = filteredRecords.length;
+      const total = document.getElementById("tableTotal");
+      if (total) total.textContent = filteredRecords.length;
+      renderChips(filters);
+      renderMetrics();
+      renderRows();
+    }
+
+    function resetFilters() {
+      form.reset();
+      applyFilters();
+    }
+
+    function updateSelectionState() {
+      if (!config.selectable) return;
+      const selectedCount = document.getElementById("selectedCount");
+      if (selectedCount) selectedCount.textContent = selectedIds.size;
+      document.querySelectorAll("[data-bulk]").forEach((button) => button.disabled = selectedIds.size === 0);
+      const selectAll = document.getElementById("selectAll");
+      if (!selectAll) return;
+      const visibleIds = filteredRecords.map((item) => item.id);
+      const visibleSelected = visibleIds.filter((id) => selectedIds.has(id)).length;
+      selectAll.checked = visibleIds.length > 0 && visibleSelected === visibleIds.length;
+      selectAll.indeterminate = visibleSelected > 0 && visibleSelected < visibleIds.length;
+    }
+
+    function detailItems(record) {
+      return Object.entries(record).map(([key, value]) => '<div class="detail-item"><span>' + escapeHtml(key) + '</span><strong>' + escapeHtml(value) + '</strong></div>').join("");
+    }
+
+    function openDetail(id) {
+      const record = records.find((item) => item.id === id);
+      if (!record) return;
+      drawerTitleEl.textContent = record.account || record.id;
+      drawerSubEl.textContent = config.title + "｜" + (record.name || record.status || "-");
+      drawerBodyEl.innerHTML = '<div class="detail-grid">' + detailItems(record) + '</div>';
+      drawerEl.classList.add("is-open");
+      drawerBackdropEl.classList.add("is-open");
+      drawerEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDrawer() {
+      drawerEl.classList.remove("is-open");
+      drawerBackdropEl.classList.remove("is-open");
+      drawerEl.setAttribute("aria-hidden", "true");
+    }
+
+    function modalFormFields(record) {
+      return (config.formFields || []).map((field) => {
+        const value = record ? record[field.key] || "" : "";
+        if (field.type === "select") return '<div class="field"><label>' + escapeHtml((field.required ? "* " : "") + field.label) + '</label><select name="' + escapeHtml(field.key) + '">' + (field.options || []).map((option) => '<option value="' + escapeHtml(option) + '" ' + (option === value ? "selected" : "") + '>' + escapeHtml(option) + '</option>').join("") + '</select></div>';
+        if (field.type === "textarea") return '<div class="field"><label>' + escapeHtml((field.required ? "* " : "") + field.label) + '</label><textarea name="' + escapeHtml(field.key) + '">' + escapeHtml(value) + '</textarea></div>';
+        return '<div class="field"><label>' + escapeHtml((field.required ? "* " : "") + field.label) + '</label><input name="' + escapeHtml(field.key) + '" type="' + (field.type === "number" ? "number" : "text") + '" value="' + escapeHtml(value) + '"></div>';
+      }).join("");
+    }
+
+    function openForm(mode, id) {
+      const record = id ? records.find((item) => item.id === id) : null;
+      modalTitleEl.textContent = (mode === "edit" ? "編輯" : "新增") + config.entity;
+      modalBodyEl.innerHTML = '<form id="entityForm" data-mode="' + mode + '" data-id="' + escapeHtml(id || "") + '"><div class="edit-grid">' + modalFormFields(record) + '</div><div class="modal-footer"><button class="button" type="button" data-close-modal>取消</button><button class="button primary" type="submit">儲存</button></div></form>';
+      openModal();
+    }
+
+    function nextId(prefix) {
+      return prefix + "-" + String(Date.now()).slice(-6);
+    }
+
+    function saveForm(formEl) {
+      const mode = formEl.dataset.mode;
+      const id = formEl.dataset.id;
+      const values = Object.fromEntries(new FormData(formEl).entries());
+      for (const field of config.formFields || []) {
+        if (field.required && !String(values[field.key] || "").trim()) {
+          showToast("請填寫" + field.label, "warning");
+          return;
+        }
+      }
+      let record = id ? records.find((item) => item.id === id) : null;
+      if (!record) {
+        const prefix = PAGE_KEY === "merchant" ? "AG" : PAGE_KEY === "request" ? "TOP" : "AUTO";
+        record = { id: nextId(prefix), createdAt: now(), updatedAt: now(), status: PAGE_KEY === "request" ? "待審批" : "啟用", members: 0, balance: 0, usedToday: 0 };
+        records.unshift(record);
+      }
+      Object.entries(values).forEach(([key, value]) => {
+        const field = (config.formFields || []).find((item) => item.key === key);
+        record[key] = field && field.type === "number" ? Number(value || 0) : value;
+      });
+      if (PAGE_KEY === "request") {
+        record.applicant = "pl_raymond";
+        record.reviewer = "-";
+      }
+      record.updatedAt = now();
+      closeModal();
+      applyFilters();
+      showToast(mode === "edit" ? config.entity + "已儲存" : config.entity + "已新增");
+    }
+
+    function openTransfer(id, mode, batch) {
+      const targets = batch ? records.filter((item) => selectedIds.has(item.id)) : records.filter((item) => item.id === id);
+      if (!targets.length) {
+        showToast("請先勾選要處理的錢包", "warning");
+        return;
+      }
+      modalTitleEl.textContent = (batch ? "批次" : "") + (mode === "deposit" ? "系統上分" : "系統下分");
+      modalBodyEl.innerHTML = '<form id="transferForm" data-mode="' + mode + '" data-batch="' + (batch ? "true" : "false") + '" data-id="' + escapeHtml(id || "") + '"><div class="field"><label>處理對象</label><input readonly value="' + escapeHtml(batch ? targets.length + " 個錢包" : targets[0].account + "(" + targets[0].currency + ")") + '"></div><div class="field"><label>* 額度</label><input name="amount" type="number" min="0" required></div><div class="filter-actions">' + [100,500,1000,5000].map((amount) => '<button class="button" type="button" data-preset="' + amount + '">+' + amount + '</button>').join("") + '</div><div class="field"><label>* 備註</label><textarea name="remark" required></textarea></div><div class="modal-footer"><button class="button" type="button" data-close-modal>取消</button><button class="button primary" type="submit">保存</button></div></form>';
+      openModal();
+    }
+
+    function saveTransfer(formEl) {
+      const amount = Number(formEl.elements.amount.value || 0);
+      const remark = formEl.elements.remark.value.trim();
+      const targets = formEl.dataset.batch === "true" ? records.filter((item) => selectedIds.has(item.id)) : records.filter((item) => item.id === formEl.dataset.id);
+      if (!amount || amount <= 0) return showToast("請輸入有效額度", "warning");
+      if (!remark) return showToast("請填寫備註", "warning");
+      if (formEl.dataset.mode === "withdraw" && targets.some((item) => amount > Number(item.balance || 0))) return showToast("下分金額不可大於目前餘額", "warning");
+      targets.forEach((item) => {
+        item.balance = formEl.dataset.mode === "deposit" ? Number(item.balance || 0) + amount : Number(item.balance || 0) - amount;
+        item.available = Math.max(0, Number(item.balance || 0) - Number(item.frozen || 0));
+        if (formEl.dataset.mode === "deposit") item.todayDeposit = Number(item.todayDeposit || 0) + amount;
+        if (formEl.dataset.mode === "withdraw") item.todayWithdraw = Number(item.todayWithdraw || 0) + amount;
+        item.updatedAt = now();
+      });
+      closeModal();
+      applyFilters();
+      showToast((formEl.dataset.mode === "deposit" ? "上分" : "下分") + "成功，已處理 " + targets.length + " 筆");
+    }
+
+    function openReview(id, decision, batch) {
+      const targets = batch ? records.filter((item) => selectedIds.has(item.id) && item.status === "待審批") : records.filter((item) => item.id === id);
+      if (!targets.length) return showToast("沒有待審批資料", "warning");
+      modalTitleEl.textContent = (decision === "approve" ? "通過" : "拒絕") + "上分請求";
+      modalBodyEl.innerHTML = '<form id="reviewForm" data-decision="' + decision + '" data-batch="' + (batch ? "true" : "false") + '" data-id="' + escapeHtml(id || "") + '"><div class="field"><label>審批對象</label><input readonly value="' + escapeHtml(targets.length + " 筆，合計 " + formatMoney(targets.reduce((sum, item) => sum + Number(item.amount || 0), 0))) + '"></div><div class="field"><label>審批備註</label><textarea name="remark"></textarea></div><div class="modal-footer"><button class="button" type="button" data-close-modal>取消</button><button class="button primary" type="submit">確認</button></div></form>';
+      openModal();
+    }
+
+    function saveReview(formEl) {
+      const targets = formEl.dataset.batch === "true" ? records.filter((item) => selectedIds.has(item.id) && item.status === "待審批") : records.filter((item) => item.id === formEl.dataset.id);
+      const status = formEl.dataset.decision === "approve" ? "已通過" : "已拒絕";
+      targets.forEach((item) => {
+        item.status = status;
+        item.reviewer = "pl_raymond";
+        item.reviewRemark = formEl.elements.remark.value.trim() || "-";
+        item.updatedAt = now();
+      });
+      closeModal();
+      applyFilters();
+      showToast("已" + (status === "已通過" ? "通過" : "拒絕") + " " + targets.length + " 筆請求");
+    }
+
+    function applyBulk(action) {
+      if (["batchDeposit", "batchWithdraw"].includes(action)) return openTransfer("", action === "batchDeposit" ? "deposit" : "withdraw", true);
+      if (["batchApprove", "batchReject"].includes(action)) return openReview("", action === "batchApprove" ? "approve" : "reject", true);
+      const targets = records.filter((item) => selectedIds.has(item.id));
+      if (!targets.length) return showToast("請先勾選資料", "warning");
+      targets.forEach((item) => {
+        if (action === "enable") item.status = "啟用";
+        if (action === "disable") item.status = "停用";
+        if (action === "cancel" && item.status === "待審批") item.status = "已取消";
+        item.updatedAt = now();
+      });
+      applyFilters();
+      showToast("批次操作已完成，共 " + targets.length + " 筆");
+    }
+
+    async function copyValue(value, button) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+        else {
+          const helper = document.createElement("textarea");
+          helper.value = value;
+          helper.style.position = "fixed";
+          helper.style.opacity = "0";
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        }
+        button.classList.add("copied");
+        showToast("已複製");
+        setTimeout(() => button.classList.remove("copied"), 1200);
+      } catch (error) {
+        showToast("複製失敗，請手動選取", "danger");
+      }
+    }
+
+    function openModal() {
+      modalEl.classList.add("is-open");
+      modalBackdropEl.classList.add("is-open");
+      modalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      modalEl.classList.remove("is-open");
+      modalBackdropEl.classList.remove("is-open");
+      modalEl.setAttribute("aria-hidden", "true");
+    }
+
+    renderFilters();
+    renderPrimaryActions();
+    renderBulkActions();
+    applyFilters();
+
+    form.addEventListener("submit", (event) => { event.preventDefault(); applyFilters(); });
+    document.getElementById("resetFilters").addEventListener("click", resetFilters);
+    document.getElementById("clearApplied").addEventListener("click", resetFilters);
+    document.getElementById("refreshButton").addEventListener("click", () => { applyFilters(); showToast("資料已刷新"); });
+    document.getElementById("toggleFilters").addEventListener("click", (event) => {
+      const panel = document.getElementById("filterPanel");
+      panel.hidden = !panel.hidden;
+      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+    document.getElementById("moreToggle").addEventListener("click", (event) => {
+      const panel = document.getElementById("moreFilters");
+      panel.hidden = !panel.hidden;
+      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+    document.getElementById("sortUpdated").addEventListener("click", () => {
+      sortDescending = !sortDescending;
+      applyFilters();
+      showToast(sortDescending ? "已依時間由新到舊排序" : "已依時間由舊到新排序");
+    });
+    chipsEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-filter]");
+      if (!button) return;
+      const control = form.elements[button.dataset.removeFilter];
+      if (control) control.value = "";
+      applyFilters();
+    });
+    document.body.addEventListener("click", (event) => {
+      const create = event.target.closest("[data-create]");
+      if (create) return openForm("create");
+      const exportButton = event.target.closest("[data-export]");
+      if (exportButton) return showToast(config.title + "已產生匯出檔案");
+      const bulk = event.target.closest("[data-bulk]");
+      if (bulk) return applyBulk(bulk.dataset.bulk);
+      const copy = event.target.closest("[data-copy]");
+      if (copy) return copyValue(copy.dataset.copy, copy);
+      const detail = event.target.closest("[data-detail]");
+      if (detail) return openDetail(detail.dataset.detail);
+      const edit = event.target.closest("[data-edit]");
+      if (edit) return openForm("edit", edit.dataset.edit);
+      const transfer = event.target.closest("[data-transfer]");
+      if (transfer) return openTransfer(transfer.dataset.id, transfer.dataset.transfer, false);
+      const review = event.target.closest("[data-review]");
+      if (review) return openReview(review.dataset.id, review.dataset.review, false);
+      const cancel = event.target.closest("[data-cancel]");
+      if (cancel) {
+        const record = records.find((item) => item.id === cancel.dataset.cancel);
+        if (record && record.status === "待審批") {
+          record.status = "已取消";
+          record.updatedAt = now();
+          applyFilters();
+          showToast("請求已取消");
+        }
+        return;
+      }
+      const toggle = event.target.closest("[data-toggle]");
+      if (toggle) {
+        const record = records.find((item) => item.id === toggle.dataset.toggle);
+        if (record) {
+          record.status = record.status === "啟用" ? "停用" : "啟用";
+          record.updatedAt = now();
+          applyFilters();
+          showToast("規則狀態已更新");
+        }
+        return;
+      }
+      const coming = event.target.closest("[data-coming-soon]");
+      if (coming) showToast(coming.dataset.comingSoon + " 尚未建立頁面", "warning");
+    });
+    document.body.addEventListener("change", (event) => {
+      const checkbox = event.target.closest(".row-check");
+      if (!checkbox) return;
+      if (checkbox.checked) selectedIds.add(checkbox.dataset.id);
+      else selectedIds.delete(checkbox.dataset.id);
+      updateSelectionState();
+    });
+    document.body.addEventListener("change", (event) => {
+      if (event.target.id !== "selectAll") return;
+      const visibleIds = filteredRecords.map((item) => item.id);
+      if (event.target.checked) visibleIds.forEach((id) => selectedIds.add(id));
+      else visibleIds.forEach((id) => selectedIds.delete(id));
+      renderRows();
+    });
+    modalBodyEl.addEventListener("click", (event) => {
+      if (event.target.closest("[data-close-modal]")) closeModal();
+      const preset = event.target.closest("[data-preset]");
+      if (preset) {
+        const input = modalBodyEl.querySelector("input[name=amount]");
+        if (input) input.value = String((Number(input.value) || 0) + Number(preset.dataset.preset));
+      }
+    });
+    modalBodyEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (event.target.id === "entityForm") saveForm(event.target);
+      if (event.target.id === "transferForm") saveTransfer(event.target);
+      if (event.target.id === "reviewForm") saveReview(event.target);
+    });
+    document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+    drawerBackdropEl.addEventListener("click", closeDrawer);
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    modalBackdropEl.addEventListener("click", closeModal);
+    window.addEventListener("keydown", (event) => { if (event.key === "Escape") { closeDrawer(); closeModal(); } });
+    const menuToggleEl = document.querySelector(".menu-toggle");
+    const sidebarEl = document.querySelector(".sidebar");
+    menuToggleEl.addEventListener("click", () => {
+      const isOpen = sidebarEl.classList.toggle("is-mobile-open");
+      menuToggleEl.setAttribute("aria-expanded", String(isOpen));
+    });
+    sidebarEl.addEventListener("click", (event) => {
+      const link = event.target.closest("a.submenu-item");
+      if (!link || window.matchMedia("(min-width: 821px)").matches) return;
+      sidebarEl.classList.remove("is-mobile-open");
+      menuToggleEl.setAttribute("aria-expanded", "false");
+    });
+  </script>
+</body>
+</html>

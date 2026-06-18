@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>會員標籤</title>
+  <script>
+    (() => {
+      const page = location.pathname.split("/").pop() || "index.html";
+      if (sessionStorage.getItem("systemAdminAuthenticated") !== "true") {
+        location.replace(`login.html?next=${encodeURIComponent(page)}`);
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #dce3ea;
+      --line-strong: #c7d1dc;
+      --text: #172121;
+      --muted: #6a747e;
+      --blue: #5961cf;
+      --blue-strong: #4852bd;
+      --green: #138a29;
+      --green-soft: #e9f8ed;
+      --red: #d92d20;
+      --red-soft: #fff0f0;
+      --shadow: 0 18px 48px rgba(23, 33, 33, 0.14);
+      --radius: 8px;
+      --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      width: 210px;
+      min-height: 100vh;
+      flex: 0 0 210px;
+      border-right: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .sidebar-logo {
+      padding: 14px 16px 10px;
+      color: #5867d8;
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .sidebar-menu {
+      padding: 8px 0 18px;
+    }
+
+    .menu-item,
+    .submenu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      background: transparent;
+      color: #303a3a;
+      text-align: left;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .menu-item {
+      justify-content: space-between;
+    }
+
+    .menu-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .menu-drag {
+      color: #7b8786;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .menu-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 25px;
+      height: 18px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #d90000;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .submenu {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .submenu-item {
+      min-height: 50px;
+      padding-left: 36px;
+      color: #343d3d;
+    }
+
+    .submenu-item.active {
+      background: #e8edf2;
+      color: #4f63d9;
+    }
+
+    .app-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .workspace-header {
+      position: sticky;
+      top: 0;
+      z-index: 18;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 0 20px 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .menu-toggle {
+      width: 32px;
+      height: 32px;
+      display: inline-grid;
+      place-items: center;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .workspace-user {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tab-strip {
+      display: flex;
+      align-items: flex-end;
+      min-height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .page-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 12px;
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .main {
+      padding: 28px 24px 42px;
+    }
+
+    .page-head,
+    .page-actions,
+    .filter-bar,
+    .applied-surface,
+    .table-toolbar,
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .page-head {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #6f777f;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .metrics,
+    .page-actions-left,
+    .filter-actions,
+    .row-actions,
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .metric {
+      min-width: 104px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      font-size: 17px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 6px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: #3f4a4a;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .button.primary:hover {
+      background: var(--blue-strong);
+    }
+
+    .button.danger {
+      border-color: #f0b8b3;
+      background: #fff;
+      color: var(--red);
+    }
+
+    .button.quiet {
+      border: 0;
+      background: transparent;
+      color: #4e5acb;
+    }
+
+    .button.icon-only {
+      width: 34px;
+      padding: 0;
+    }
+
+    .surface {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .filter-surface {
+      margin-bottom: 14px;
+      padding: 20px;
+    }
+
+    .filter-bar {
+      margin-bottom: 14px;
+    }
+
+    .filter-bar h2 {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 36px;
+      padding: 7px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .field-counter {
+      align-self: flex-end;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .required {
+      color: var(--red);
+      font-weight: 900;
+    }
+
+    .applied-surface {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+    }
+
+    .applied-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .applied-title,
+    .result-count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .result-count strong {
+      color: var(--text);
+    }
+
+    .chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 26px;
+      padding: 3px 8px;
+      border: 1px solid #c9d6ff;
+      border-radius: 999px;
+      background: #f1f4ff;
+      color: #3d47b6;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .chip button {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: currentColor;
+      font-weight: 900;
+    }
+
+    .empty-chip {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-surface {
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: #f4f6f8;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #fbfdff;
+    }
+
+    .id-col {
+      width: 92px;
+    }
+
+    .color-col {
+      width: 110px;
+    }
+
+    .name-col {
+      width: 140px;
+    }
+
+    .count-col {
+      width: 100px;
+    }
+
+    .remark-col {
+      width: 180px;
+    }
+
+    .user-col {
+      width: 130px;
+    }
+
+    .time-col {
+      width: 170px;
+    }
+
+    .action-col {
+      width: 170px;
+    }
+
+    .summary {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .summary-text {
+      overflow: hidden;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .summary-subtext,
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .label-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+
+    .label-preview {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+    }
+
+    .card-list {
+      display: none;
+      gap: 10px;
+    }
+
+    .label-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      min-width: 0;
+    }
+
+    .card-title strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .card-meta-item {
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-soft);
+    }
+
+    .card-meta-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .card-meta-item strong {
+      display: block;
+      overflow: hidden;
+      margin-top: 4px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      display: none;
+      padding: 52px 18px;
+      text-align: center;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    .pagination {
+      justify-content: center;
+      padding: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .page-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 39;
+      display: none;
+      background: rgba(23, 33, 33, 0.42);
+    }
+
+    .modal-backdrop.is-open {
+      display: block;
+    }
+
+    .label-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 40;
+      width: min(520px, calc(100vw - 28px));
+      max-height: calc(100vh - 28px);
+      display: none;
+      flex-direction: column;
+      border-radius: 4px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      transform: translate(-50%, -50%);
+    }
+
+    .label-modal.is-open {
+      display: flex;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-title strong {
+      display: block;
+      color: #5e676f;
+      font-size: 18px;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      padding: 20px 24px 0;
+    }
+
+    .label-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 20px 0 16px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    @media (max-width: 1180px) {
+      .quick-grid {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app-shell {
+        display: block;
+      }
+
+      .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidebar-logo {
+        font-size: 28px;
+      }
+
+      .sidebar-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        max-height: calc(100vh - 54px);
+        overflow-y: auto;
+        padding: 8px 0 14px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+        box-shadow: 0 18px 36px rgba(23, 33, 33, 0.16);
+      }
+
+      .sidebar.is-mobile-open .sidebar-menu {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .main {
+        padding: 16px 14px 32px;
+      }
+
+      .page-head,
+      .page-actions,
+      .filter-bar,
+      .applied-surface,
+      .table-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .metrics,
+      .page-actions-left,
+      .filter-actions {
+        justify-content: flex-start;
+      }
+
+      .quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .table-scroll {
+        display: none;
+      }
+
+      .card-list {
+        display: grid;
+        padding: 12px;
+      }
+
+      .applied-left {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 540px) {
+      h1 {
+        font-size: 20px;
+      }
+
+      .quick-grid,
+      .card-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .button.icon-only,
+      .row-actions .button {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="左側菜單">
+      <div class="sidebar-logo">SYSTEM</div>
+      <nav class="sidebar-menu">
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>會員管理</span><span>⌃</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="member-account.html">會員帳戶</a>
+          <a class="submenu-item" href="member-wallet.html">會員錢包</a>
+          <a class="submenu-item active" href="member-labels.html">會員標籤</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>代理管理</span><span class="menu-badge">19</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="agent-merchant.html">代理商戶</a>
+          <a class="submenu-item" href="agent-wallet.html">代理錢包</a>
+          <a class="submenu-item" href="agent-topup-request.html">上分請求</a>
+          <a class="submenu-item" href="agent-topup-approval.html">上分請求審批<span class="menu-badge">19</span></a>
+          <a class="submenu-item" href="agent-auto-replenish.html">自動補分</a>
+          <a class="submenu-item" href="agent-cash-statistics.html">代理出入金統計</a>
+          <a class="submenu-item" href="agent-revenue-report.html">代理營收報表</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲商管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲管理</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="game-list.html">遊戲清單</a>
+          <a class="submenu-item" href="index.html">遊戲接入</a>
+          <a class="submenu-item" href="game-lobby-list.html">遊戲大廳清單</a>
+          <button class="submenu-item" type="button" data-coming-soon="遊戲大廳接入">遊戲大廳接入</button>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>內容管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>運營系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>支付系統</span><span class="menu-badge">1</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>財務系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>系統</span><span>⌄</span></button>
+      </nav>
+    </aside>
+
+    <div class="app-main">
+      <header class="workspace-header">
+        <button class="menu-toggle" type="button" aria-label="展開或收合菜單" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h12"></path><path d="M4 18h16"></path></svg>
+        </button>
+        <div class="workspace-user">
+          <span>pl_raymond</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+      </header>
+      <div class="tab-strip">
+        <button class="page-tab" type="button">會員標籤 <span aria-hidden="true">×</span></button>
+      </div>
+
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>會員標籤</h1>
+          </div>
+          <div class="metrics" aria-label="摘要">
+            <div class="metric">標籤數 <strong id="totalMetric">0</strong></div>
+            <div class="metric">使用中 <strong id="activeMetric">0</strong></div>
+            <div class="metric">總用戶 <strong id="usersMetric">0</strong></div>
+          </div>
+        </div>
+
+        <div class="page-actions">
+          <div class="page-actions-left">
+            <button class="button" type="button" id="refreshButton">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M18 2v4h4"></path><path d="M6 22v-4H2"></path></svg>
+              刷新
+            </button>
+            <button class="button primary" type="button" id="openCreateLabel">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              新增
+            </button>
+          </div>
+        </div>
+
+        <section class="surface filter-surface" aria-label="篩選">
+          <form id="filterForm">
+            <div class="filter-bar">
+              <h2>快速篩選</h2>
+              <div class="filter-actions">
+                <button class="button primary" type="submit">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3"></path><circle cx="11" cy="11" r="8"></circle></svg>
+                  搜索
+                </button>
+                <button class="button" type="button" id="resetFilters">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v6h6"></path></svg>
+                  重置
+                </button>
+              </div>
+            </div>
+
+            <div class="quick-grid">
+              <div class="field">
+                <label for="idFilter">ID</label>
+                <input id="idFilter" name="id" type="search" placeholder="ID">
+              </div>
+              <div class="field">
+                <label for="nameFilter">標籤名稱</label>
+                <input id="nameFilter" name="name" type="search" placeholder="標籤名稱">
+              </div>
+              <div class="field">
+                <label for="colorFilter">標籤顏色</label>
+                <select id="colorFilter" name="color"><option value="">全部</option></select>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="surface applied-surface" aria-label="已套用篩選條件">
+          <div class="applied-left">
+            <div class="applied-title">已套用篩選條件（<span id="filterCount">0</span>）</div>
+            <div class="result-count">共 <strong id="resultCount">0</strong> 筆結果</div>
+            <div class="chips" id="activeChips"></div>
+          </div>
+          <button class="button quiet" type="button" id="clearApplied">清除全部</button>
+        </section>
+
+        <section class="surface table-surface" aria-label="會員標籤列表">
+          <div class="table-toolbar">
+            <div class="pagination-controls">
+              <button class="button" type="button" id="sortUpdated">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="M12 4v16"></path></svg>
+                更新時間
+              </button>
+            </div>
+            <span class="result-count">合計 <strong id="tableTotal">0</strong> 件</span>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="id-col">ID</th>
+                  <th class="color-col">標籤顏色</th>
+                  <th class="name-col">標籤名稱</th>
+                  <th class="count-col">用戶人數</th>
+                  <th class="remark-col">備註</th>
+                  <th class="user-col">創建人</th>
+                  <th class="time-col">創建時間</th>
+                  <th class="user-col">修改人</th>
+                  <th class="time-col">更新時間</th>
+                  <th class="action-col">操作</th>
+                </tr>
+              </thead>
+              <tbody id="labelRows"></tbody>
+            </table>
+          </div>
+          <div class="card-list" id="cardList"></div>
+          <div class="empty-state" id="emptyState">
+            <strong>沒有符合條件的標籤</strong>
+            <span>調整篩選條件後會重新整理列表。</span>
+          </div>
+          <div class="pagination">
+            <div class="pagination-controls">
+              <button class="button" type="button" disabled>«</button>
+              <button class="button" type="button" disabled>‹</button>
+              <span class="page-box">1</span>
+              <button class="button" type="button" disabled>›</button>
+              <button class="button" type="button" disabled>»</button>
+              <span>10件/頁</span>
+              <span>合計 <strong id="paginationTotal">0</strong> 件</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <section class="label-modal" id="labelModal" aria-label="標籤編輯" aria-hidden="true">
+    <div class="modal-head">
+      <div class="modal-title">
+        <strong id="modalTitle">新增標籤</strong>
+      </div>
+      <button class="button icon-only" type="button" id="closeModal" aria-label="關閉">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </section>
+
+  <script>
+    const colorOptions = [
+      { value: "#034f9c", label: "藍色" },
+      { value: "#ffffff", label: "白色" },
+      { value: "#10b981", label: "綠色" },
+      { value: "#16bcd4", label: "龍色" },
+      { value: "#ffd91a", label: "黃色" }
+    ];
+
+    const filterMeta = {
+      id: "ID",
+      name: "標籤名稱",
+      color: "標籤顏色"
+    };
+
+    const labels = [
+      { id: "001", color: "#034f9c", name: "新用戶", userCount: 43, remark: "註冊七天內用戶", createdBy: "-", createdAt: "2025-08-28 16:07:45", updatedBy: "-", updatedAt: "2025-08-28 16:31:38", locked: true },
+      { id: "002", color: "#ffffff", name: "一般用戶", userCount: 1422, remark: "註冊七天後用戶", createdBy: "-", createdAt: "2025-08-28 16:07:45", updatedBy: "-", updatedAt: "2025-08-28 16:07:45", locked: true },
+      { id: "033", color: "#10b981", name: "帥哥", userCount: 0, remark: "上車囉", createdBy: "pl_lives01", createdAt: "2025-10-10 11:15:24", updatedBy: "pl_lives01", updatedAt: "2025-10-10 11:15:24", locked: false },
+      { id: "055", color: "#16bcd4", name: "龍色", userCount: 0, remark: "1133", createdBy: "admin", createdAt: "2025-08-28 16:14:12", updatedBy: "admin", updatedAt: "2025-09-04 16:57:27", locked: false },
+      { id: "066", color: "#034f9c", name: "藍色", userCount: 0, remark: "-", createdBy: "admin", createdAt: "2025-08-28 16:30:25", updatedBy: "admin", updatedAt: "2025-08-28 16:52:36", locked: false },
+      { id: "077", color: "#ffd91a", name: "doncic", userCount: 1, remark: "湖人", createdBy: "risk_depp", createdAt: "2025-09-17 16:05:05", updatedBy: "risk_depp", updatedAt: "2025-09-17 16:05:05", locked: false }
+    ];
+
+    let filteredLabels = [...labels];
+    let sortDescending = true;
+
+    const form = document.getElementById("filterForm");
+    const rowsEl = document.getElementById("labelRows");
+    const cardListEl = document.getElementById("cardList");
+    const chipsEl = document.getElementById("activeChips");
+    const resultCountEl = document.getElementById("resultCount");
+    const filterCountEl = document.getElementById("filterCount");
+    const emptyStateEl = document.getElementById("emptyState");
+    const tableTotalEl = document.getElementById("tableTotal");
+    const paginationTotalEl = document.getElementById("paginationTotal");
+    const modalEl = document.getElementById("labelModal");
+    const modalBackdropEl = document.getElementById("modalBackdrop");
+    const modalTitleEl = document.getElementById("modalTitle");
+    const modalBodyEl = document.getElementById("modalBody");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message, tone = "success") {
+      let toast = document.getElementById("appToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "appToast";
+        toast.setAttribute("role", "status");
+        Object.assign(toast.style, {
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
+          zIndex: "1600",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          boxShadow: "0 10px 28px rgba(15, 23, 42, 0.18)",
+          color: "#fff",
+          fontSize: "14px",
+          opacity: "0",
+          transform: "translateY(8px)",
+          transition: "opacity .2s ease, transform .2s ease",
+          pointerEvents: "none"
+        });
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.background = tone === "warning" ? "#92400e" : tone === "danger" ? "#b91c1c" : "#1f2937";
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      });
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+      }, 1800);
+    }
+
+    function colorLabel(color) {
+      return colorOptions.find((option) => option.value === color)?.label || color;
+    }
+
+    function swatch(color) {
+      return `<span class="label-swatch" style="background:${escapeHtml(color)}" title="${escapeHtml(colorLabel(color))}"></span>`;
+    }
+
+    function initializeOptions() {
+      const colorSelect = document.getElementById("colorFilter");
+      colorOptions.forEach((option) => {
+        const item = document.createElement("option");
+        item.value = option.value;
+        item.textContent = option.label;
+        colorSelect.appendChild(item);
+      });
+    }
+
+    function getFilters() {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function matchesFilter(label, filters) {
+      if (filters.id && !label.id.includes(filters.id.trim())) return false;
+      if (filters.name && !label.name.toLowerCase().includes(filters.name.trim().toLowerCase())) return false;
+      if (filters.color && label.color !== filters.color) return false;
+      return true;
+    }
+
+    function renderActions(label) {
+      if (label.locked) return `<span class="muted">系統預設</span>`;
+      return `<div class="row-actions">
+        <button class="button" type="button" data-edit-label="${escapeHtml(label.id)}">編輯</button>
+        <button class="button danger" type="button" data-delete-label="${escapeHtml(label.id)}">刪除</button>
+      </div>`;
+    }
+
+    function renderRows() {
+      rowsEl.innerHTML = filteredLabels.map((label) => `<tr>
+        <td class="id-col">${escapeHtml(label.id)}</td>
+        <td class="color-col">${swatch(label.color)}</td>
+        <td class="name-col"><span class="summary-text">${escapeHtml(label.name)}</span></td>
+        <td class="count-col">${escapeHtml(label.userCount)}</td>
+        <td class="remark-col"><span class="summary-subtext">${escapeHtml(label.remark)}</span></td>
+        <td class="user-col">${escapeHtml(label.createdBy)}</td>
+        <td class="time-col">${escapeHtml(label.createdAt)}</td>
+        <td class="user-col">${escapeHtml(label.updatedBy)}</td>
+        <td class="time-col">${escapeHtml(label.updatedAt)}</td>
+        <td class="action-col">${renderActions(label)}</td>
+      </tr>`).join("");
+
+      cardListEl.innerHTML = filteredLabels.map((label) => `<article class="label-card">
+        <div class="card-head">
+          <div class="card-title">
+            <strong>${escapeHtml(label.name)}</strong>
+            <span class="summary-subtext">ID ${escapeHtml(label.id)}｜${escapeHtml(colorLabel(label.color))}</span>
+          </div>
+          ${swatch(label.color)}
+        </div>
+        <div class="card-meta">
+          <div class="card-meta-item"><span>用戶人數</span><strong>${escapeHtml(label.userCount)}</strong></div>
+          <div class="card-meta-item"><span>備註</span><strong>${escapeHtml(label.remark)}</strong></div>
+          <div class="card-meta-item"><span>創建人</span><strong>${escapeHtml(label.createdBy)}</strong></div>
+          <div class="card-meta-item"><span>更新時間</span><strong>${escapeHtml(label.updatedAt.slice(0, 10))}</strong></div>
+        </div>
+        ${renderActions(label)}
+      </article>`).join("");
+
+      emptyStateEl.style.display = filteredLabels.length ? "none" : "block";
+    }
+
+    function renderChips(filters) {
+      const activeFilters = Object.entries(filters)
+        .filter(([, value]) => value !== "")
+        .map(([key, value]) => ({ key, label: filterMeta[key], value: key === "color" ? colorLabel(value) : value }));
+      filterCountEl.textContent = activeFilters.length;
+      chipsEl.innerHTML = activeFilters.length
+        ? activeFilters.map((filter) => `<span class="chip"><span>${escapeHtml(filter.label)}：${escapeHtml(filter.value)}</span><button type="button" data-remove-filter="${escapeHtml(filter.key)}" aria-label="移除 ${escapeHtml(filter.label)}">×</button></span>`).join("")
+        : `<span class="empty-chip">無套用條件</span>`;
+    }
+
+    function renderMetrics() {
+      document.getElementById("totalMetric").textContent = labels.length;
+      document.getElementById("activeMetric").textContent = labels.filter((label) => label.userCount > 0).length;
+      document.getElementById("usersMetric").textContent = labels.reduce((sum, label) => sum + label.userCount, 0);
+    }
+
+    function applyFilters() {
+      const filters = getFilters();
+      filteredLabels = labels
+        .filter((label) => matchesFilter(label, filters))
+        .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt) * (sortDescending ? -1 : 1));
+      resultCountEl.textContent = filteredLabels.length;
+      tableTotalEl.textContent = filteredLabels.length;
+      paginationTotalEl.textContent = filteredLabels.length;
+      renderChips(filters);
+      renderRows();
+    }
+
+    function resetFilters() {
+      form.reset();
+      applyFilters();
+    }
+
+    function getCurrentTimestamp() {
+      const now = new Date();
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    function renderLabelForm(label = null) {
+      const isEdit = Boolean(label);
+      const current = label || { id: "", name: "", color: "", remark: "" };
+      return `<form class="label-form" id="labelForm" data-mode="${isEdit ? "edit" : "create"}" data-label-id="${escapeHtml(current.id)}">
+        <div class="field">
+          <label for="labelId"><span class="required">*</span> ID</label>
+          <input id="labelId" name="id" value="${escapeHtml(current.id)}" placeholder="請輸入1~999" inputmode="numeric" maxlength="3" ${isEdit ? "readonly" : ""} required>
+        </div>
+        <div class="field">
+          <label for="labelName"><span class="required">*</span> 標籤名稱</label>
+          <input id="labelName" name="name" value="${escapeHtml(current.name)}" maxlength="8" required>
+          <span class="field-counter" id="nameCounter">${escapeHtml(current.name.length)} / 8</span>
+        </div>
+        <div class="field">
+          <label for="labelColor"><span class="required">*</span> 標籤顏色</label>
+          <select id="labelColor" name="color" required>
+            <option value="">請選擇</option>
+            ${colorOptions.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === current.color ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="labelRemark">備註</label>
+          <textarea id="labelRemark" name="remark" maxlength="200">${escapeHtml(current.remark === "-" ? "" : current.remark)}</textarea>
+          <span class="field-counter" id="remarkCounter">${escapeHtml(current.remark === "-" ? 0 : current.remark.length)} / 200</span>
+        </div>
+        <div class="modal-footer">
+          <button class="button" type="button" data-close-modal>取消</button>
+          <button class="button primary" type="submit">保存</button>
+        </div>
+      </form>`;
+    }
+
+    function openLabelModal(mode, id = "") {
+      const label = labels.find((item) => item.id === id) || null;
+      modalTitleEl.textContent = mode === "edit" ? "編輯標籤" : "新增標籤";
+      modalBodyEl.innerHTML = renderLabelForm(mode === "edit" ? label : null);
+      modalEl.classList.add("is-open");
+      modalBackdropEl.classList.add("is-open");
+      modalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function openDeleteConfirm(id) {
+      const label = labels.find((item) => item.id === id);
+      if (!label || label.locked) return;
+      modalTitleEl.textContent = "刪除標籤";
+      modalBodyEl.innerHTML = `<div class="detail-section">
+        <p class="summary-text">確定刪除「${escapeHtml(label.name)}」？</p>
+        <p class="summary-subtext">刪除後列表會立即更新，已綁定用戶數會保留在目前示意資料中。</p>
+        <div class="modal-footer">
+          <button class="button" type="button" data-close-modal>取消</button>
+          <button class="button danger" type="button" data-confirm-delete="${escapeHtml(label.id)}">刪除</button>
+        </div>
+      </div>`;
+      modalEl.classList.add("is-open");
+      modalBackdropEl.classList.add("is-open");
+      modalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal() {
+      modalEl.classList.remove("is-open");
+      modalBackdropEl.classList.remove("is-open");
+      modalEl.setAttribute("aria-hidden", "true");
+    }
+
+    function submitLabel(labelForm) {
+      const mode = labelForm.dataset.mode;
+      const rawId = labelForm.elements.id.value.trim();
+      const id = rawId.padStart(3, "0");
+      const name = labelForm.elements.name.value.trim();
+      const color = labelForm.elements.color.value;
+      const remark = labelForm.elements.remark.value.trim() || "-";
+      if (!/^[0-9]{1,3}$/.test(rawId)) {
+        showToast("ID 請輸入 1~999", "warning");
+        return;
+      }
+      if (!name || !color) {
+        showToast("請填寫標籤名稱與標籤顏色", "warning");
+        return;
+      }
+      const now = getCurrentTimestamp();
+      if (mode === "create") {
+        if (labels.some((label) => label.id === id)) {
+          showToast("ID 已存在", "warning");
+          return;
+        }
+        labels.push({
+          id,
+          name,
+          color,
+          userCount: 0,
+          remark,
+          createdBy: "admin",
+          createdAt: now,
+          updatedBy: "admin",
+          updatedAt: now,
+          locked: false
+        });
+      } else {
+        const label = labels.find((item) => item.id === labelForm.dataset.labelId);
+        if (!label || label.locked) return;
+        label.name = name;
+        label.color = color;
+        label.remark = remark;
+        label.updatedBy = "admin";
+        label.updatedAt = now;
+      }
+      renderMetrics();
+      applyFilters();
+      closeModal();
+      showToast(mode === "create" ? "標籤已新增" : "標籤已儲存");
+    }
+
+    function deleteLabel(id) {
+      const index = labels.findIndex((label) => label.id === id);
+      if (index === -1 || labels[index].locked) return;
+      labels.splice(index, 1);
+      renderMetrics();
+      applyFilters();
+      closeModal();
+      showToast("標籤已刪除");
+    }
+
+    function updateCounters() {
+      const nameInput = document.getElementById("labelName");
+      const remarkInput = document.getElementById("labelRemark");
+      const nameCounter = document.getElementById("nameCounter");
+      const remarkCounter = document.getElementById("remarkCounter");
+      if (nameInput && nameCounter) nameCounter.textContent = `${nameInput.value.length} / 8`;
+      if (remarkInput && remarkCounter) remarkCounter.textContent = `${remarkInput.value.length} / 200`;
+    }
+
+    function setupMobileMenu() {
+      const menuToggleEl = document.querySelector(".menu-toggle");
+      const sidebarEl = document.querySelector(".sidebar");
+      if (!menuToggleEl || !sidebarEl) return;
+      menuToggleEl.addEventListener("click", () => {
+        const isOpen = sidebarEl.classList.toggle("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", String(isOpen));
+      });
+      sidebarEl.addEventListener("click", (event) => {
+        const link = event.target.closest("a.submenu-item");
+        if (!link || window.matchMedia("(min-width: 821px)").matches) return;
+        sidebarEl.classList.remove("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFilters();
+    });
+
+    document.getElementById("resetFilters").addEventListener("click", resetFilters);
+    document.getElementById("clearApplied").addEventListener("click", resetFilters);
+    document.getElementById("refreshButton").addEventListener("click", applyFilters);
+    document.getElementById("openCreateLabel").addEventListener("click", () => openLabelModal("create"));
+    document.getElementById("sortUpdated").addEventListener("click", () => {
+      sortDescending = !sortDescending;
+      applyFilters();
+      showToast(sortDescending ? "已依更新時間由新到舊排序" : "已依更新時間由舊到新排序");
+    });
+
+    chipsEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-filter]");
+      if (!button) return;
+      const control = form.elements[button.dataset.removeFilter];
+      if (control) {
+        control.value = "";
+        applyFilters();
+      }
+    });
+
+    document.body.addEventListener("click", (event) => {
+      const comingSoonButton = event.target.closest("[data-coming-soon]");
+      if (comingSoonButton) {
+        showToast(`${comingSoonButton.dataset.comingSoon} 尚未建立頁面`, "warning");
+        return;
+      }
+      const editButton = event.target.closest("[data-edit-label]");
+      if (editButton) {
+        openLabelModal("edit", editButton.dataset.editLabel);
+        return;
+      }
+      const deleteButton = event.target.closest("[data-delete-label]");
+      if (deleteButton) {
+        openDeleteConfirm(deleteButton.dataset.deleteLabel);
+      }
+    });
+
+    modalBodyEl.addEventListener("input", updateCounters);
+    modalBodyEl.addEventListener("click", (event) => {
+      const confirmDeleteButton = event.target.closest("[data-confirm-delete]");
+      if (confirmDeleteButton) {
+        deleteLabel(confirmDeleteButton.dataset.confirmDelete);
+        return;
+      }
+      if (event.target.closest("[data-close-modal]")) closeModal();
+    });
+    modalBodyEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (event.target.getAttribute("id") === "labelForm") submitLabel(event.target);
+    });
+
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    modalBackdropEl.addEventListener("click", closeModal);
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeModal();
+    });
+
+    setupMobileMenu();
+    initializeOptions();
+    renderMetrics();
+    applyFilters();
+  </script>
+</body>
+</html>

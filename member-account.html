@@ -1,0 +1,2296 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>會員帳戶</title>
+  <script>
+    (() => {
+      const page = location.pathname.split("/").pop() || "index.html";
+      if (sessionStorage.getItem("systemAdminAuthenticated") !== "true") {
+        location.replace(`login.html?next=${encodeURIComponent(page)}`);
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #dce3ea;
+      --line-strong: #c7d1dc;
+      --text: #172121;
+      --muted: #6a747e;
+      --subtle: #89939d;
+      --blue: #5961cf;
+      --blue-strong: #4852bd;
+      --green: #138a29;
+      --green-soft: #e9f8ed;
+      --red: #e00000;
+      --red-soft: #fff0f0;
+      --amber: #a35c00;
+      --amber-soft: #fff4df;
+      --teal: #0f8b8d;
+      --teal-soft: #e5f6f4;
+      --shadow: 0 18px 48px rgba(23, 33, 33, 0.14);
+      --radius: 8px;
+      --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      width: 210px;
+      min-height: 100vh;
+      flex: 0 0 210px;
+      border-right: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .sidebar-logo {
+      padding: 14px 16px 10px;
+      color: #5867d8;
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .sidebar-menu {
+      padding: 8px 0 18px;
+    }
+
+    .menu-item,
+    .submenu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      background: transparent;
+      color: #303a3a;
+      text-align: left;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .menu-item {
+      justify-content: space-between;
+    }
+
+    .menu-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .menu-drag {
+      color: #7b8786;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .menu-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 25px;
+      height: 18px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #d90000;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .submenu {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .submenu-item {
+      min-height: 50px;
+      padding-left: 36px;
+      color: #343d3d;
+      text-decoration: none;
+    }
+
+    .submenu-item.active {
+      background: #e8edf2;
+      color: #4f63d9;
+    }
+
+    .app-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .workspace-header {
+      position: sticky;
+      top: 0;
+      z-index: 18;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 0 20px 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .menu-toggle {
+      width: 32px;
+      height: 32px;
+      display: inline-grid;
+      place-items: center;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .workspace-user {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .tab-strip {
+      display: flex;
+      align-items: flex-end;
+      min-height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .page-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border: 0;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .page-tab::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .main {
+      width: min(100%, 1480px);
+      margin: 0 auto;
+      padding: 24px 24px 40px;
+    }
+
+    .page-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      color: #5b666f;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    h2 {
+      font-size: 16px;
+    }
+
+    h3 {
+      font-size: 14px;
+    }
+
+    .metrics {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .metric strong {
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .page-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .page-actions-left,
+    .page-actions-right,
+    .filter-actions,
+    .bulk-actions,
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 34px;
+      max-width: 100%;
+      padding: 6px 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .button:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .button.primary:hover {
+      background: var(--blue-strong);
+      color: #fff;
+    }
+
+    .button.teal {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .button.teal:hover {
+      background: #087274;
+      color: #fff;
+    }
+
+    .button.icon-only {
+      width: 34px;
+      padding: 0;
+    }
+
+    .button.quiet {
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .surface {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .filter-surface {
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .quick-grid,
+    .more-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .more-grid {
+      margin-top: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 36px;
+      padding: 6px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(89, 97, 207, 0.14);
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .date-range {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .applied-surface {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 56px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .applied-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .applied-title {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .result-count {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 260px;
+      min-height: 28px;
+      padding: 3px 8px 3px 10px;
+      border: 1px solid #c4cef8;
+      border-radius: 999px;
+      background: #f0f2ff;
+      color: #3d47b6;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip button {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: currentColor;
+      font-weight: 900;
+    }
+
+    .empty-chip {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-surface {
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+    }
+
+    .selected-count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1280px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--muted);
+      background: #f4f6f8;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #fbfdff;
+    }
+
+    .check-col {
+      width: 48px;
+    }
+
+    .game-col {
+      width: 285px;
+    }
+
+    .agent-col {
+      width: 118px;
+    }
+
+    .type-col {
+      width: 116px;
+    }
+
+    .status-col {
+      width: 150px;
+    }
+
+    .platform-col {
+      width: 180px;
+    }
+
+    .time-col {
+      width: 150px;
+    }
+
+    .action-col {
+      width: 150px;
+    }
+
+    .game-info,
+    .summary {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .game-name,
+    .summary-text {
+      overflow: hidden;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .game-meta,
+    .summary-subtext,
+    .muted-line {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .game-id-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 26px;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .game-id-text {
+      overflow: hidden;
+      min-width: 0;
+      padding: 3px 6px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-soft);
+      color: #455151;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy-button {
+      display: inline-grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .copy-button.copied {
+      border-color: var(--green);
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      min-height: 24px;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .tag.green {
+      border-color: #b7e1c5;
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .tag.red {
+      border-color: #f1b5ad;
+      background: var(--red-soft);
+      color: #b42318;
+    }
+
+    .tag.amber {
+      border-color: #f0cf9b;
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    .tag.blue {
+      border-color: #c4cef8;
+      background: #f0f2ff;
+      color: #3d47b6;
+    }
+
+    .label-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .label-swatch {
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--line-strong);
+      border-radius: 4px;
+      flex: 0 0 auto;
+    }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-dot::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .status-dot.enabled::before {
+      background: var(--green);
+    }
+
+    .status-dot.maintain::before {
+      background: var(--amber);
+    }
+
+    .status-rail {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(5px, 1fr));
+      gap: 3px;
+      width: 150px;
+      max-width: 100%;
+    }
+
+    .status-segment {
+      height: 6px;
+      border-radius: 999px;
+      background: #cdd5df;
+    }
+
+    .status-segment.enabled {
+      background: var(--green);
+    }
+
+    .status-segment.maintain {
+      background: var(--amber);
+    }
+
+    .summary-action {
+      display: inline-flex;
+      width: fit-content;
+      min-height: 24px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #4e5acb;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .summary-action:hover {
+      text-decoration: underline;
+    }
+
+    .card-list {
+      display: none;
+      gap: 10px;
+    }
+
+    .game-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      min-width: 0;
+    }
+
+    .card-title strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .card-meta-item {
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-soft);
+    }
+
+    .card-meta-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .card-meta-item strong {
+      display: block;
+      overflow: hidden;
+      margin-top: 4px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      display: none;
+      padding: 52px 18px;
+      text-align: center;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 39;
+      display: none;
+      background: rgba(23, 33, 33, 0.35);
+    }
+
+    .drawer-backdrop.is-open {
+      display: block;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 40;
+      width: min(560px, 100vw);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      box-shadow: var(--shadow);
+      transform: translateX(104%);
+      transition: transform 180ms ease;
+    }
+
+    .drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfc;
+    }
+
+    .drawer-title {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .drawer-title strong {
+      overflow: hidden;
+      font-size: 18px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .drawer-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .drawer-body {
+      overflow-y: auto;
+      padding: 18px 20px 28px;
+    }
+
+    .detail-section {
+      padding-bottom: 18px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-section:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .detail-section h3 {
+      margin-bottom: 10px;
+    }
+
+    .detail-grid,
+    .platform-grid,
+    .exposure-grid,
+    .edit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .platform-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .detail-item,
+    .platform-tile {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+    }
+
+    .detail-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .detail-item strong {
+      display: block;
+      overflow-wrap: anywhere;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .platform-name {
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .edit-section {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .edit-section:last-of-type {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .edit-section h3 {
+      margin-bottom: 10px;
+    }
+
+    .edit-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .edit-field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .edit-field input,
+    .edit-field select,
+    .edit-field textarea {
+      width: 100%;
+      min-height: 36px;
+      padding: 6px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #fff;
+      outline: none;
+    }
+
+    .edit-field textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .edit-footer {
+      position: sticky;
+      bottom: -28px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 14px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), #fff 38%);
+    }
+
+    @media (max-width: 1180px) {
+      .quick-grid,
+      .more-grid {
+        grid-template-columns: repeat(4, minmax(140px, 1fr));
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app-shell {
+        display: block;
+      }
+
+      .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidebar-logo {
+        font-size: 28px;
+      }
+
+      .sidebar-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        max-height: calc(100vh - 54px);
+        overflow-y: auto;
+        padding: 8px 0 14px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+        box-shadow: 0 18px 36px rgba(23, 33, 33, 0.16);
+      }
+
+      .sidebar.is-mobile-open .sidebar-menu {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .main {
+        padding: 16px 14px 32px;
+      }
+
+      .page-head,
+      .page-actions,
+      .filter-bar,
+      .applied-surface,
+      .table-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .metrics,
+      .page-actions-left,
+      .page-actions-right,
+      .filter-actions,
+      .bulk-actions {
+        justify-content: flex-start;
+      }
+
+      .quick-grid,
+      .more-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .span-2 {
+        grid-column: span 2;
+      }
+
+      .table-scroll {
+        display: none;
+      }
+
+      .card-list {
+        display: grid;
+        padding: 12px;
+      }
+
+      .applied-left {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 540px) {
+      h1 {
+        font-size: 20px;
+      }
+
+      .quick-grid,
+      .more-grid,
+      .detail-grid,
+      .platform-grid,
+      .exposure-grid,
+      .edit-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .span-2 {
+        grid-column: span 1;
+      }
+
+      .date-range,
+      .card-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .button.icon-only,
+      .row-actions .button {
+        width: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="左側菜單">
+      <div class="sidebar-logo">SYSTEM</div>
+      <nav class="sidebar-menu">
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>會員管理</span><span>⌃</span></button>
+        <div class="submenu">
+          <a class="submenu-item active" href="member-account.html">會員帳戶</a>
+          <a class="submenu-item" href="member-wallet.html">會員錢包</a>
+          <a class="submenu-item" href="member-labels.html">會員標籤</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>代理管理</span><span class="menu-badge">19</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="agent-merchant.html">代理商戶</a>
+          <a class="submenu-item" href="agent-wallet.html">代理錢包</a>
+          <a class="submenu-item" href="agent-topup-request.html">上分請求</a>
+          <a class="submenu-item" href="agent-topup-approval.html">上分請求審批<span class="menu-badge">19</span></a>
+          <a class="submenu-item" href="agent-auto-replenish.html">自動補分</a>
+          <a class="submenu-item" href="agent-cash-statistics.html">代理出入金統計</a>
+          <a class="submenu-item" href="agent-revenue-report.html">代理營收報表</a>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲商管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>遊戲管理</span><span>⌄</span></button>
+        <div class="submenu">
+          <a class="submenu-item" href="game-list.html">遊戲清單</a>
+          <a class="submenu-item" href="index.html">遊戲接入</a>
+          <a class="submenu-item" href="game-lobby-list.html">遊戲大廳清單</a>
+          <button class="submenu-item" type="button" data-coming-soon="遊戲大廳接入">遊戲大廳接入</button>
+        </div>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>內容管理</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>運營系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>支付系統</span><span class="menu-badge">1</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>財務系統</span><span>⌄</span></button>
+        <button class="menu-item" type="button"><span class="menu-label"><span class="menu-drag">≡</span>系統</span><span>⌄</span></button>
+      </nav>
+    </aside>
+
+    <div class="app-main">
+      <header class="workspace-header">
+        <button class="menu-toggle" type="button" aria-label="展開或收合菜單" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h12"></path><path d="M4 18h16"></path></svg>
+        </button>
+        <div class="workspace-user">
+          <span>pl_raymond</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+      </header>
+      <div class="tab-strip">
+        <button class="page-tab" type="button">會員帳戶 <span aria-hidden="true">×</span></button>
+      </div>
+
+      <main class="main">
+        <div class="page-head">
+          <div>
+            <h1>會員帳戶</h1>
+          </div>
+          <div class="metrics" aria-label="摘要">
+            <div class="metric">總會員 <strong id="totalMetric">0</strong></div>
+            <div class="metric">啟用中 <strong id="enabledMetric">0</strong></div>
+            <div class="metric">有餘額 <strong id="balanceMetric">0</strong></div>
+          </div>
+        </div>
+
+        <div class="page-actions">
+          <div class="page-actions-left">
+            <button class="button" type="button" id="refreshButton">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M18 2v4h4"></path><path d="M6 22v-4H2"></path></svg>
+              刷新
+            </button>
+            <button class="button" type="button" id="toggleFilters" aria-expanded="false" aria-controls="filterPanel">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18"></path><path d="M6 12h12"></path><path d="M10 19h4"></path></svg>
+              篩選
+            </button>
+            <button class="button primary" type="button" id="openCreateMember">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+              新增
+            </button>
+          </div>
+        </div>
+
+        <section class="surface filter-surface" id="filterPanel" aria-label="篩選" hidden>
+          <form id="filterForm">
+            <div class="filter-bar">
+              <h2>快速篩選</h2>
+              <div class="filter-actions">
+                <button class="button" type="button" id="moreToggle" aria-expanded="false" aria-controls="moreFilters">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18"></path><path d="M6 12h12"></path><path d="M10 19h4"></path></svg>
+                  更多篩選
+                </button>
+                <button class="button primary" type="submit">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3"></path><circle cx="11" cy="11" r="8"></circle></svg>
+                  篩選
+                </button>
+                <button class="button" type="button" id="resetFilters">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 3v6h6"></path></svg>
+                  重置
+                </button>
+              </div>
+            </div>
+
+            <div class="quick-grid">
+              <div class="field span-2">
+                <label for="keyword">關鍵字</label>
+                <input id="keyword" name="keyword" type="search" placeholder="玩家帳號 / 暱稱 / 用戶編號 / Email">
+              </div>
+              <div class="field">
+                <label for="agent">所屬代理</label>
+                <select id="agent" name="agent"><option value="">全部</option></select>
+              </div>
+              <div class="field">
+                <label for="account">玩家帳號</label>
+                <input id="account" name="account" type="search" placeholder="玩家帳號">
+              </div>
+              <div class="field">
+                <label for="status">狀態</label>
+                <select id="status" name="status"><option value="">全部</option></select>
+              </div>
+              <div class="field">
+                <label for="email">郵箱</label>
+                <input id="email" name="email" type="search" placeholder="Email">
+              </div>
+              <div class="field">
+                <label for="countryCode">國碼</label>
+                <select id="countryCode" name="countryCode"><option value="">全部</option></select>
+              </div>
+              <div class="field">
+                <label for="phone">電話號碼</label>
+                <input id="phone" name="phone" type="search" placeholder="電話號碼">
+              </div>
+            </div>
+
+            <div class="more-grid" id="moreFilters" hidden>
+              <div class="field"><label for="userNo">用戶編號</label><input id="userNo" name="userNo" type="search" placeholder="用戶編號"></div>
+              <div class="field"><label for="nickname">玩家暱稱</label><input id="nickname" name="nickname" type="search" placeholder="玩家暱稱"></div>
+              <div class="field"><label for="label">會員標籤</label><select id="label" name="label"><option value="">全部</option></select></div>
+              <div class="field"><label for="balanceMin">餘額最小值</label><input id="balanceMin" name="balanceMin" type="number" min="0" placeholder="0"></div>
+              <div class="field"><label for="balanceMax">餘額最大值</label><input id="balanceMax" name="balanceMax" type="number" min="0" placeholder="999999"></div>
+              <div class="field span-2">
+                <label>建立時間區間</label>
+                <div class="date-range">
+                  <input id="createdFrom" name="createdFrom" type="date" aria-label="建立時間開始">
+                  <input id="createdTo" name="createdTo" type="date" aria-label="建立時間結束">
+                </div>
+              </div>
+              <div class="field span-2">
+                <label>最後登入時間區間</label>
+                <div class="date-range">
+                  <input id="loginFrom" name="loginFrom" type="date" aria-label="最後登入時間開始">
+                  <input id="loginTo" name="loginTo" type="date" aria-label="最後登入時間結束">
+                </div>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="surface applied-surface" aria-label="已套用篩選條件">
+          <div class="applied-left">
+            <div class="applied-title">已套用篩選條件（<span id="filterCount">0</span>）</div>
+            <div class="result-count">共 <strong id="resultCount">0</strong> 筆結果</div>
+            <div class="chips" id="activeChips"></div>
+          </div>
+          <button class="button quiet" type="button" id="clearApplied">清除全部</button>
+        </section>
+
+        <section class="surface table-surface" aria-label="會員帳戶列表">
+          <div class="table-toolbar">
+            <div class="bulk-actions">
+              <span class="selected-count">已選 <strong id="selectedCount">0</strong></span>
+              <button class="button" type="button" id="bulkEnable" disabled>批次啟用</button>
+              <button class="button" type="button" id="bulkDisable" disabled>批次停用</button>
+            </div>
+            <div class="bulk-actions">
+              <button class="button" type="button" id="sortUpdated">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="M12 4v16"></path></svg>
+                更新時間
+              </button>
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="check-col"><input id="selectAll" type="checkbox" aria-label="全選"></th>
+                  <th class="game-col">會員資訊</th>
+                  <th class="agent-col">代理 / 標籤</th>
+                  <th class="type-col">餘額 / 狀態</th>
+                  <th class="status-col">登入資訊</th>
+                  <th class="platform-col">聯絡方式</th>
+                  <th class="time-col">時間</th>
+                  <th class="action-col">操作</th>
+                </tr>
+              </thead>
+              <tbody id="gameRows"></tbody>
+            </table>
+          </div>
+          <div class="card-list" id="cardList"></div>
+          <div class="empty-state" id="emptyState">
+            <strong>沒有符合條件的會員</strong>
+            <span>調整篩選條件後會重新整理列表。</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="detailDrawer" aria-label="會員詳情" aria-hidden="true">
+    <div class="drawer-head">
+      <div class="drawer-title">
+        <strong id="drawerName">會員詳情</strong>
+        <span id="drawerSub">-</span>
+      </div>
+      <button class="button icon-only" type="button" id="closeDrawer" aria-label="關閉詳情">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <script>
+    const labelColors = {
+      "新用戶": "#034f9c",
+      "一般用戶": "#ffffff",
+      doncic: "#ffd91a",
+      VIP: "#12a150"
+    };
+    const filterMeta = {
+      keyword: "關鍵字",
+      agent: "所屬代理",
+      account: "玩家帳號",
+      status: "狀態",
+      email: "郵箱",
+      countryCode: "國碼",
+      phone: "電話號碼",
+      userNo: "用戶編號",
+      nickname: "玩家暱稱",
+      label: "會員標籤",
+      balanceMin: "餘額最小值",
+      balanceMax: "餘額最大值",
+      createdFrom: "建立時間起",
+      createdTo: "建立時間迄",
+      loginFrom: "最後登入時間起",
+      loginTo: "最後登入時間迄"
+    };
+
+    const games = [
+      {
+        id: "2a7e02a9-54b3-43f2-8f70-dd77a4576a1c",
+        userNo: "10001583",
+        account: "test0429",
+        nickname: "test0429",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "新用戶",
+        balance: 0,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "2a7e02a9-54b3-43f2-8f70-dd77a4576a1c",
+        rootRecommendNo: "10001583",
+        rootRecommendUser: "test0429",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2026-05-07 15:33:51",
+        createdAt: "2026-05-07 15:33:51",
+        updatedAt: "2026-05-07 15:33:51"
+      },
+      {
+        id: "5e535e2b-df4b-4ce6-91d3-2a0584e13c0b",
+        userNo: "10001570",
+        account: "test0001",
+        nickname: "test0001",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 0,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "5e535e2b-df4b-4ce6-91d3-2a0584e13c0b",
+        rootRecommendNo: "10001570",
+        rootRecommendUser: "test0001",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2026-04-24 11:53:59",
+        createdAt: "2026-04-24 11:53:59",
+        updatedAt: "2026-04-24 11:53:59"
+      },
+      {
+        id: "2c6d95ec-f7fd-4b65-9f91-66e83f6be8d9",
+        userNo: "10001507",
+        account: "testtest001",
+        nickname: "testtest0001",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 400,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "2c6d95ec-f7fd-4b65-9f91-66e83f6be8d9",
+        rootRecommendNo: "10001507",
+        rootRecommendUser: "testtest001",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2026-02-02 16:52:10",
+        createdAt: "2026-02-02 16:52:10",
+        updatedAt: "2026-02-02 16:52:10"
+      },
+      {
+        id: "9a9c50f6-8d5a-4afd-b567-413ad0c12591",
+        userNo: "10001506",
+        account: "testlin001",
+        nickname: "testlin001",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 0,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "9a9c50f6-8d5a-4afd-b567-413ad0c12591",
+        rootRecommendNo: "10001506",
+        rootRecommendUser: "testlin001",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2026-02-02 10:04:33",
+        createdAt: "2026-02-02 10:04:33",
+        updatedAt: "2026-02-02 10:04:33"
+      },
+      {
+        id: "a9904709-37fd-4ee3-b7f5-b6fe32201c0e",
+        userNo: "10001485",
+        account: "testOUP123",
+        nickname: "AAQQAA",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 0,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "a9904709-37fd-4ee3-b7f5-b6fe32201c0e",
+        rootRecommendNo: "10001485",
+        rootRecommendUser: "testOUP123",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2025-12-05 13:55:45",
+        createdAt: "2025-12-05 13:55:45",
+        updatedAt: "2025-12-05 13:55:45"
+      },
+      {
+        id: "e78bfe7b-27de-4bb1-8d56-97459f5ef5ac",
+        userNo: "10001480",
+        account: "test1202",
+        nickname: "111111111111",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "doncic",
+        balance: 0,
+        status: "啟用",
+        email: "111111@1111",
+        countryCode: "+81",
+        phone: "1233654880",
+        lastLoginIp: "-",
+        rootRecommendId: "e78bfe7b-27de-4bb1-8d56-97459f5ef5ac",
+        rootRecommendNo: "10001480",
+        rootRecommendUser: "test1202",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2025-12-02 15:13:48",
+        createdAt: "2025-12-02 15:13:48",
+        updatedAt: "2025-12-02 15:13:48"
+      },
+      {
+        id: "db690e18-e1c1-413d-a1de-0e9fb5ae7e02",
+        userNo: "10001472",
+        account: "vip0526",
+        nickname: "VIP0526",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "VIP",
+        balance: 1800,
+        status: "啟用",
+        email: "vip0526@example.com",
+        countryCode: "+886",
+        phone: "0912345678",
+        lastLoginIp: "192.168.0.18",
+        rootRecommendId: "db690e18-e1c1-413d-a1de-0e9fb5ae7e02",
+        rootRecommendNo: "10001472",
+        rootRecommendUser: "vip0526",
+        createMethod: "後台建立",
+        verifyTime: "2025-11-16 09:20:00",
+        lastLoginAt: "2025-11-16 09:22:15",
+        createdAt: "2025-11-15 18:05:43",
+        updatedAt: "2025-11-16 09:22:15"
+      },
+      {
+        id: "0f8f6ccf-501c-4adc-96b6-f76a01ee9f82",
+        userNo: "10001431",
+        account: "freeze001",
+        nickname: "freeze001",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 0,
+        status: "停用",
+        email: "-",
+        countryCode: "+81",
+        phone: "-",
+        lastLoginIp: "-",
+        rootRecommendId: "0f8f6ccf-501c-4adc-96b6-f76a01ee9f82",
+        rootRecommendNo: "10001431",
+        rootRecommendUser: "freeze001",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2025-10-20 08:10:12",
+        createdAt: "2025-10-19 14:42:11",
+        updatedAt: "2025-10-20 08:10:12"
+      },
+      {
+        id: "1f8e42fc-6ace-45fe-91d3-4d0a51641d1b",
+        userNo: "10001412",
+        account: "member888",
+        nickname: "member888",
+        agentId: "00000000000000000000000000000000",
+        agent: "System",
+        label: "一般用戶",
+        balance: 20,
+        status: "啟用",
+        email: "-",
+        countryCode: "+81",
+        phone: "0800000000",
+        lastLoginIp: "-",
+        rootRecommendId: "1f8e42fc-6ace-45fe-91d3-4d0a51641d1b",
+        rootRecommendNo: "10001412",
+        rootRecommendUser: "member888",
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: "2025-09-28 12:31:24",
+        createdAt: "2025-09-28 12:20:18",
+        updatedAt: "2025-09-28 12:31:24"
+      }
+    ];
+
+    let filteredGames = [...games];
+    let selectedIds = new Set();
+    let sortDescending = true;
+
+    const form = document.getElementById("filterForm");
+    const rowsEl = document.getElementById("gameRows");
+    const cardListEl = document.getElementById("cardList");
+    const chipsEl = document.getElementById("activeChips");
+    const resultCountEl = document.getElementById("resultCount");
+    const filterCountEl = document.getElementById("filterCount");
+    const selectAllEl = document.getElementById("selectAll");
+    const selectedCountEl = document.getElementById("selectedCount");
+    const bulkEnableEl = document.getElementById("bulkEnable");
+    const bulkDisableEl = document.getElementById("bulkDisable");
+    const emptyStateEl = document.getElementById("emptyState");
+    const drawerEl = document.getElementById("detailDrawer");
+    const drawerBackdropEl = document.getElementById("drawerBackdrop");
+    const drawerNameEl = document.getElementById("drawerName");
+    const drawerSubEl = document.getElementById("drawerSub");
+    const drawerBodyEl = document.getElementById("drawerBody");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message, tone = "success") {
+      let toast = document.getElementById("appToast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "appToast";
+        toast.setAttribute("role", "status");
+        Object.assign(toast.style, {
+          position: "fixed",
+          right: "24px",
+          bottom: "24px",
+          zIndex: "1600",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          boxShadow: "0 10px 28px rgba(15, 23, 42, 0.18)",
+          color: "#fff",
+          fontSize: "14px",
+          opacity: "0",
+          transform: "translateY(8px)",
+          transition: "opacity .2s ease, transform .2s ease",
+          pointerEvents: "none"
+        });
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.background = tone === "warning" ? "#92400e" : tone === "danger" ? "#b91c1c" : "#1f2937";
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      });
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+      }, 1800);
+    }
+
+    function getUnique(field) {
+      return [...new Set(games.map((game) => game[field]))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
+    }
+
+    function fillOptions(id, values) {
+      const select = document.getElementById(id);
+      values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+    }
+
+    function initializeOptions() {
+      fillOptions("agent", getUnique("agent"));
+      fillOptions("status", getUnique("status"));
+      fillOptions("countryCode", getUnique("countryCode"));
+      fillOptions("label", getUnique("label"));
+    }
+
+    function getFilters() {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function matchesFilter(game, filters) {
+      const keyword = filters.keyword.trim().toLowerCase();
+      if (keyword) {
+        const haystack = [game.id, game.userNo, game.account, game.nickname, game.agent, game.label, game.email, game.phone].join(" ").toLowerCase();
+        if (!haystack.includes(keyword)) return false;
+      }
+
+      if (filters.userNo && !game.userNo.includes(filters.userNo.trim())) return false;
+      if (filters.account && !game.account.toLowerCase().includes(filters.account.trim().toLowerCase())) return false;
+      if (filters.nickname && !game.nickname.toLowerCase().includes(filters.nickname.trim().toLowerCase())) return false;
+      if (filters.email && !game.email.toLowerCase().includes(filters.email.trim().toLowerCase())) return false;
+      if (filters.phone && !game.phone.includes(filters.phone.trim())) return false;
+
+      const exactFields = ["agent", "status", "countryCode", "label"];
+      for (const field of exactFields) {
+        if (filters[field] && game[field] !== filters[field]) return false;
+      }
+
+      if (filters.balanceMin && game.balance < Number(filters.balanceMin)) return false;
+      if (filters.balanceMax && game.balance > Number(filters.balanceMax)) return false;
+
+      const createdDate = game.createdAt.slice(0, 10);
+      const loginDate = game.lastLoginAt.slice(0, 10);
+      if (filters.createdFrom && createdDate < filters.createdFrom) return false;
+      if (filters.createdTo && createdDate > filters.createdTo) return false;
+      if (filters.loginFrom && loginDate < filters.loginFrom) return false;
+      if (filters.loginTo && loginDate > filters.loginTo) return false;
+
+      return true;
+    }
+
+    function getStatusDot(status) {
+      const className = status === "啟用" ? "enabled" : "";
+      return `<span class="status-dot ${className}">${escapeHtml(status)}</span>`;
+    }
+
+    function labelChip(label) {
+      const color = labelColors[label] || "#c8d2d1";
+      return `<span class="label-chip"><span class="label-swatch" style="background:${escapeHtml(color)}"></span>${escapeHtml(label)}</span>`;
+    }
+
+    function formatMoney(value) {
+      return Number(value).toLocaleString("zh-Hant", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderRows() {
+      rowsEl.innerHTML = filteredGames.map((game) => {
+        const checked = selectedIds.has(game.id) ? "checked" : "";
+        return `<tr>
+          <td class="check-col"><input type="checkbox" class="row-check" data-id="${escapeHtml(game.id)}" aria-label="選取 ${escapeHtml(game.account)}" ${checked}></td>
+          <td class="game-col">${gameInfoMarkup(game)}</td>
+          <td class="agent-col">
+            <div class="summary">
+              <span class="summary-text">${escapeHtml(game.agent)}</span>
+              ${labelChip(game.label)}
+            </div>
+          </td>
+          <td class="type-col">
+            <div class="summary">
+              <span class="summary-text">${escapeHtml(formatMoney(game.balance))}</span>
+              ${getStatusDot(game.status)}
+            </div>
+          </td>
+          <td class="status-col">
+            <div class="summary">
+              <span class="summary-text">${escapeHtml(game.lastLoginAt)}</span>
+              <span class="summary-subtext">IP：${escapeHtml(game.lastLoginIp)}</span>
+            </div>
+          </td>
+          <td class="platform-col">
+            <div class="summary">
+              <span class="summary-text">${escapeHtml(game.email)}</span>
+              <span class="summary-subtext">${escapeHtml(game.countryCode)}｜${escapeHtml(game.phone)}</span>
+            </div>
+          </td>
+          <td class="time-col">
+            <div class="summary">
+              <span class="summary-text">${escapeHtml(game.createdAt.slice(0, 10))}</span>
+              <span class="summary-subtext">${escapeHtml(game.updatedAt.slice(0, 10))}</span>
+            </div>
+          </td>
+          <td class="action-col">
+            <div class="row-actions">
+              <button class="button" type="button" data-open-edit="${escapeHtml(game.id)}">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                編輯
+              </button>
+              <button class="button" type="button" data-open-detail="${escapeHtml(game.id)}">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                詳情
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+
+      cardListEl.innerHTML = filteredGames.map((game) => `<article class="game-card">
+        <div class="card-head">
+          <div class="card-title">
+            <strong>${escapeHtml(game.account)} <span class="muted-line">${escapeHtml(game.nickname)}</span></strong>
+            <span class="game-meta">${escapeHtml(game.userNo)}｜${escapeHtml(game.agent)}</span>
+          </div>
+          ${getStatusDot(game.status)}
+        </div>
+        ${gameIdMarkup(game)}
+        <div class="card-meta">
+          <div class="card-meta-item"><span>標籤</span><strong>${escapeHtml(game.label)}</strong></div>
+          <div class="card-meta-item"><span>餘額</span><strong>${escapeHtml(formatMoney(game.balance))}</strong></div>
+          <div class="card-meta-item"><span>聯絡</span><strong>${escapeHtml(game.countryCode)} ${escapeHtml(game.phone)}</strong></div>
+          <div class="card-meta-item"><span>最後登入</span><strong>${escapeHtml(game.lastLoginAt.slice(0, 10))}</strong></div>
+        </div>
+        <div class="row-actions">
+          <button class="button" type="button" data-open-edit="${escapeHtml(game.id)}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+            編輯
+          </button>
+          <button class="button" type="button" data-open-detail="${escapeHtml(game.id)}">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            詳情
+          </button>
+        </div>
+      </article>`).join("");
+
+      emptyStateEl.style.display = filteredGames.length ? "none" : "block";
+      updateSelectionState();
+    }
+
+    function gameInfoMarkup(game) {
+      return `<div class="game-info">
+        <div class="game-name">${escapeHtml(game.account)} <span class="muted-line">${escapeHtml(game.nickname)}</span></div>
+        ${gameIdMarkup(game)}
+        <div class="game-meta">ID ${escapeHtml(game.id)}</div>
+      </div>`;
+    }
+
+    function gameIdMarkup(game) {
+      return `<div class="game-id-row">
+        <span class="game-id-text" title="${escapeHtml(game.userNo)}">${escapeHtml(game.userNo)}</span>
+        <button class="copy-button" type="button" data-copy-id="${escapeHtml(game.userNo)}" aria-label="複製 ${escapeHtml(game.userNo)}">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+      </div>`;
+    }
+
+    function getChipValue(key, value) {
+      return value;
+    }
+
+    function renderChips(filters) {
+      const activeFilters = Object.entries(filters)
+        .filter(([, value]) => value !== "")
+        .map(([key, value]) => ({ key, label: filterMeta[key], value: getChipValue(key, value) }));
+      filterCountEl.textContent = activeFilters.length;
+      chipsEl.innerHTML = activeFilters.length
+        ? activeFilters.map((filter) => `<span class="chip"><span>${escapeHtml(filter.label)}：${escapeHtml(filter.value)}</span><button type="button" data-remove-filter="${escapeHtml(filter.key)}" aria-label="移除 ${escapeHtml(filter.label)}">×</button></span>`).join("")
+        : `<span class="empty-chip">無套用條件</span>`;
+    }
+
+    function renderMetrics() {
+      document.getElementById("totalMetric").textContent = games.length;
+      document.getElementById("enabledMetric").textContent = games.filter((game) => game.status === "啟用").length;
+      document.getElementById("balanceMetric").textContent = games.filter((game) => game.balance > 0).length;
+    }
+
+    function applyFilters() {
+      const filters = getFilters();
+      filteredGames = games
+        .filter((game) => matchesFilter(game, filters))
+        .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt) * (sortDescending ? -1 : 1));
+      selectedIds = new Set([...selectedIds].filter((id) => filteredGames.some((game) => game.id === id)));
+      resultCountEl.textContent = filteredGames.length;
+      renderChips(filters);
+      renderRows();
+    }
+
+    function resetFilters() {
+      form.reset();
+      applyFilters();
+    }
+
+    function updateSelectionState() {
+      selectedCountEl.textContent = selectedIds.size;
+      const visibleIds = filteredGames.map((game) => game.id);
+      const visibleSelected = visibleIds.filter((id) => selectedIds.has(id)).length;
+      selectAllEl.checked = visibleIds.length > 0 && visibleSelected === visibleIds.length;
+      selectAllEl.indeterminate = visibleSelected > 0 && visibleSelected < visibleIds.length;
+      bulkEnableEl.disabled = selectedIds.size === 0;
+      bulkDisableEl.disabled = selectedIds.size === 0;
+    }
+
+    function openDrawer(gameId, mode = "detail") {
+      const game = games.find((item) => item.id === gameId);
+      if (!game) return;
+      drawerNameEl.textContent = mode === "create" ? "創建" : mode === "edit" ? `編輯：${game.account}` : game.account;
+      drawerSubEl.textContent = `${game.userNo}｜${game.agent}｜${game.label}`;
+      drawerBodyEl.innerHTML = mode === "edit" ? renderEditForm(game) : renderGameDetail(game);
+      drawerEl.classList.add("is-open");
+      drawerBackdropEl.classList.add("is-open");
+      drawerEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDrawer() {
+      drawerEl.classList.remove("is-open");
+      drawerBackdropEl.classList.remove("is-open");
+      drawerEl.setAttribute("aria-hidden", "true");
+    }
+
+    function detailItem(label, value) {
+      return `<div class="detail-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+    }
+
+    function renderGameDetail(game) {
+      return `
+        <section class="detail-section"><h3>基本資料</h3><div class="detail-grid">
+          ${detailItem("ID", game.id)}
+          ${detailItem("用戶編號", game.userNo)}
+          ${detailItem("玩家帳號", game.account)}
+          ${detailItem("玩家暱稱", game.nickname)}
+          ${detailItem("會員標籤", game.label)}
+          ${detailItem("餘額", formatMoney(game.balance))}
+          ${detailItem("代理ID", game.agentId)}
+          ${detailItem("代理名稱", game.agent)}
+        </div></section>
+        <section class="detail-section"><h3>狀態與聯絡</h3><div class="detail-grid">
+          ${detailItem("狀態", game.status)}
+          ${detailItem("郵箱", game.email)}
+          ${detailItem("電話號碼", `${game.countryCode} ${game.phone}`)}
+          ${detailItem("IP", game.lastLoginIp)}
+        </div></section>
+        <section class="detail-section"><h3>推薦與時間</h3><div class="detail-grid">
+          ${detailItem("根級推薦ID", game.rootRecommendId)}
+          ${detailItem("根級推薦序號", game.rootRecommendNo)}
+          ${detailItem("根級推薦用戶", game.rootRecommendUser)}
+          ${detailItem("創建方式", game.createMethod)}
+          ${detailItem("驗證時間", game.verifyTime)}
+          ${detailItem("最後登入時間", game.lastLoginAt)}
+          ${detailItem("建立時間", game.createdAt)}
+          ${detailItem("更新時間", game.updatedAt)}
+        </div></section>`;
+    }
+
+    function renderEditForm(game) {
+      return `<form class="edit-form" id="editGameForm" data-game-id="${escapeHtml(game.id)}">
+        <section class="edit-section"><h3>基本資料</h3><div class="edit-grid">
+          ${textField("ID", "id", game.id, true)}
+          ${textField("用戶編號", "userNo", game.userNo, true)}
+          ${textField("玩家帳號", "account", game.account, true)}
+          ${selectField("會員標籤", "label", getUnique("label"), game.label)}
+          ${selectField("所屬代理", "agent", getUnique("agent"), game.agent)}
+          ${numberField("餘額", "balance", game.balance)}
+        </div></section>
+        <section class="edit-section"><h3>聯絡與狀態</h3><div class="edit-grid">
+          ${textField("玩家暱稱", "nickname", game.nickname)}
+          ${textField("郵箱", "email", game.email === "-" ? "" : game.email)}
+          ${selectField("國碼", "countryCode", getUnique("countryCode"), game.countryCode)}
+          ${textField("電話號碼", "phone", game.phone === "-" ? "" : game.phone)}
+          ${passwordField("密碼", "password")}
+          ${passwordField("確認密碼", "confirmPassword")}
+          ${selectField("狀態", "status", getUnique("status"), game.status)}
+        </div></section>
+        <section class="edit-section"><h3>系統資訊</h3><div class="edit-grid">
+          ${textField("創建方式", "createMethod", game.createMethod, true)}
+          ${textField("驗證時間", "verifyTime", game.verifyTime, true)}
+          ${textField("建立時間", "createdAt", game.createdAt, true)}
+          ${textField("更新時間", "updatedAt", game.updatedAt, true)}
+        </div></section>
+        <div class="edit-footer"><button class="button" type="button" data-cancel-edit="${escapeHtml(game.id)}">取消</button><button class="button primary" type="submit">儲存</button></div>
+      </form>`;
+    }
+
+    function textField(label, name, value, readonly = false) {
+      return `<div class="edit-field"><label for="edit-${escapeHtml(name)}">${escapeHtml(label)}</label><input id="edit-${escapeHtml(name)}" name="${escapeHtml(name)}" value="${escapeHtml(value)}" ${readonly ? "readonly" : ""}></div>`;
+    }
+
+    function numberField(label, name, value) {
+      return `<div class="edit-field"><label for="edit-${escapeHtml(name)}">${escapeHtml(label)}</label><input id="edit-${escapeHtml(name)}" name="${escapeHtml(name)}" type="number" min="0" value="${escapeHtml(value)}"></div>`;
+    }
+
+    function passwordField(label, name) {
+      return `<div class="edit-field"><label for="edit-${escapeHtml(name)}">${escapeHtml(label)}</label><input id="edit-${escapeHtml(name)}" name="${escapeHtml(name)}" type="password" placeholder="請輸入${escapeHtml(label)}"></div>`;
+    }
+
+    function selectField(label, name, values, current, labels = {}) {
+      const id = `edit-${name.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+      return `<div class="edit-field"><label for="${escapeHtml(id)}">${escapeHtml(label)}</label><select id="${escapeHtml(id)}" name="${escapeHtml(name)}">${values.map((value) => `<option value="${escapeHtml(value)}" ${value === current ? "selected" : ""}>${escapeHtml(labels[value] || value)}</option>`).join("")}</select></div>`;
+    }
+
+    function saveEditedGame(editForm) {
+      const game = games.find((item) => item.id === editForm.dataset.gameId);
+      if (!game) return;
+      if (editForm.elements.password.value && editForm.elements.password.value !== editForm.elements.confirmPassword.value) {
+        showToast("密碼與確認密碼不一致", "warning");
+        return;
+      }
+      game.label = editForm.elements.label.value;
+      game.agent = editForm.elements.agent.value;
+      game.balance = Number(editForm.elements.balance.value) || 0;
+      game.nickname = editForm.elements.nickname.value.trim();
+      game.email = editForm.elements.email.value.trim() || "-";
+      game.countryCode = editForm.elements.countryCode.value;
+      game.phone = editForm.elements.phone.value.trim() || "-";
+      game.status = editForm.elements.status.value;
+      game.updatedAt = getCurrentTimestamp();
+      renderMetrics();
+      applyFilters();
+      openDrawer(game.id);
+      showToast("會員資料已儲存");
+    }
+
+    function openCreateDrawer() {
+      drawerNameEl.textContent = "創建";
+      drawerSubEl.textContent = "新增會員帳戶";
+      drawerBodyEl.innerHTML = renderCreateForm();
+      drawerEl.classList.add("is-open");
+      drawerBackdropEl.classList.add("is-open");
+      drawerEl.setAttribute("aria-hidden", "false");
+    }
+
+    function renderCreateForm() {
+      return `<form class="edit-form" id="createMemberForm">
+        <section class="edit-section"><h3>基本資料</h3><div class="edit-grid">
+          ${textField("玩家帳號", "account", "")}
+          ${selectField("會員標籤", "label", getUnique("label"), "新用戶")}
+          ${selectField("所屬代理", "agent", getUnique("agent"), "System")}
+          ${textField("玩家暱稱", "nickname", "")}
+          ${textField("郵箱", "email", "")}
+          ${selectField("國碼", "countryCode", getUnique("countryCode"), "+81")}
+          ${textField("電話號碼", "phone", "")}
+          ${passwordField("密碼", "password")}
+          ${passwordField("確認密碼", "confirmPassword")}
+          ${selectField("啟用狀態", "status", getUnique("status"), "啟用")}
+        </div></section>
+        <div class="edit-footer"><button class="button" type="button" data-close-create>重置</button><button class="button primary" type="submit">儲存</button></div>
+      </form>`;
+    }
+
+    function createMember(createForm) {
+      const account = createForm.elements.account.value.trim();
+      const nickname = createForm.elements.nickname.value.trim();
+      const password = createForm.elements.password.value;
+      const confirmPassword = createForm.elements.confirmPassword.value;
+      if (!account || !nickname || !password) {
+        showToast("請填寫玩家帳號、玩家暱稱與密碼", "warning");
+        return;
+      }
+      if (password !== confirmPassword) {
+        showToast("密碼與確認密碼不一致", "warning");
+        return;
+      }
+      const now = getCurrentTimestamp();
+      const nextNo = String(Math.max(...games.map((game) => Number(game.userNo))) + 1);
+      const member = {
+        id: window.crypto && typeof window.crypto.randomUUID === "function" ? window.crypto.randomUUID() : `member-${Date.now()}`,
+        userNo: nextNo,
+        account,
+        nickname,
+        agentId: "00000000000000000000000000000000",
+        agent: createForm.elements.agent.value,
+        label: createForm.elements.label.value,
+        balance: 0,
+        status: createForm.elements.status.value,
+        email: createForm.elements.email.value.trim() || "-",
+        countryCode: createForm.elements.countryCode.value,
+        phone: createForm.elements.phone.value.trim() || "-",
+        lastLoginIp: "-",
+        rootRecommendId: "",
+        rootRecommendNo: nextNo,
+        rootRecommendUser: account,
+        createMethod: "後台建立",
+        verifyTime: "-",
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now
+      };
+      games.unshift(member);
+      renderMetrics();
+      applyFilters();
+      openDrawer(member.id);
+      showToast("會員帳戶已新增");
+    }
+
+    function applyBulkMemberStatus(status) {
+      if (selectedIds.size === 0) {
+        showToast("請先勾選要批次處理的會員", "warning");
+        return;
+      }
+      const now = getCurrentTimestamp();
+      const count = selectedIds.size;
+      games.forEach((game) => {
+        if (!selectedIds.has(game.id)) return;
+        game.status = status;
+        game.updatedAt = now;
+      });
+      renderMetrics();
+      applyFilters();
+      showToast(`已批次${status} ${count} 位會員`);
+    }
+
+    function getCurrentTimestamp() {
+      const now = new Date();
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    async function copyGameId(button) {
+      const value = button.dataset.copyId;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+        } else {
+          const helper = document.createElement("textarea");
+          helper.value = value;
+          helper.setAttribute("readonly", "");
+          helper.style.position = "fixed";
+          helper.style.opacity = "0";
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand("copy");
+          helper.remove();
+        }
+        button.classList.add("copied");
+        button.setAttribute("aria-label", "已複製用戶編號");
+        showToast("用戶編號已複製");
+        setTimeout(() => {
+          button.classList.remove("copied");
+          button.setAttribute("aria-label", `複製 ${value}`);
+        }, 1200);
+      } catch (error) {
+        button.setAttribute("aria-label", "複製失敗");
+        showToast("複製失敗，請手動選取", "danger");
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyFilters();
+    });
+
+    document.getElementById("toggleFilters").addEventListener("click", (event) => {
+      const panel = document.getElementById("filterPanel");
+      panel.hidden = !panel.hidden;
+      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+
+    document.getElementById("moreToggle").addEventListener("click", (event) => {
+      const panel = document.getElementById("moreFilters");
+      panel.hidden = !panel.hidden;
+      event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+
+    document.getElementById("resetFilters").addEventListener("click", resetFilters);
+    document.getElementById("clearApplied").addEventListener("click", resetFilters);
+    document.getElementById("refreshButton").addEventListener("click", applyFilters);
+    document.getElementById("openCreateMember").addEventListener("click", openCreateDrawer);
+    document.getElementById("sortUpdated").addEventListener("click", () => {
+      sortDescending = !sortDescending;
+      applyFilters();
+      showToast(sortDescending ? "已依更新時間由新到舊排序" : "已依更新時間由舊到新排序");
+    });
+    bulkEnableEl.addEventListener("click", () => applyBulkMemberStatus("啟用"));
+    bulkDisableEl.addEventListener("click", () => applyBulkMemberStatus("停用"));
+
+    chipsEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-filter]");
+      if (!button) return;
+      const control = form.elements[button.dataset.removeFilter];
+      if (control) {
+        control.value = "";
+        applyFilters();
+      }
+    });
+
+    document.body.addEventListener("click", (event) => {
+      const comingSoonButton = event.target.closest("[data-coming-soon]");
+      if (comingSoonButton) {
+        showToast(`${comingSoonButton.dataset.comingSoon} 尚未建立頁面`, "warning");
+        return;
+      }
+      const copyButton = event.target.closest("[data-copy-id]");
+      if (copyButton) {
+        copyGameId(copyButton);
+        return;
+      }
+      const detailButton = event.target.closest("[data-open-detail]");
+      if (detailButton) {
+        openDrawer(detailButton.dataset.openDetail);
+        return;
+      }
+      const editButton = event.target.closest("[data-open-edit]");
+      if (editButton) {
+        openDrawer(editButton.dataset.openEdit, "edit");
+        return;
+      }
+    });
+
+    document.body.addEventListener("change", (event) => {
+      const checkbox = event.target.closest(".row-check");
+      if (!checkbox) return;
+      if (checkbox.checked) {
+        selectedIds.add(checkbox.dataset.id);
+      } else {
+        selectedIds.delete(checkbox.dataset.id);
+      }
+      updateSelectionState();
+    });
+
+    selectAllEl.addEventListener("change", () => {
+      const visibleIds = filteredGames.map((game) => game.id);
+      if (selectAllEl.checked) {
+        visibleIds.forEach((id) => selectedIds.add(id));
+      } else {
+        visibleIds.forEach((id) => selectedIds.delete(id));
+      }
+      renderRows();
+    });
+
+    drawerBodyEl.addEventListener("click", (event) => {
+      const cancelButton = event.target.closest("[data-cancel-edit]");
+      if (cancelButton) openDrawer(cancelButton.dataset.cancelEdit);
+      const closeCreateButton = event.target.closest("[data-close-create]");
+      if (closeCreateButton) openCreateDrawer();
+    });
+
+    drawerBodyEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (event.target.getAttribute("id") === "editGameForm") {
+        saveEditedGame(event.target);
+      }
+      if (event.target.getAttribute("id") === "createMemberForm") {
+        createMember(event.target);
+      }
+    });
+
+    document.getElementById("closeDrawer").addEventListener("click", closeDrawer);
+    drawerBackdropEl.addEventListener("click", closeDrawer);
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDrawer();
+    });
+
+    function setupMobileMenu() {
+      const menuToggleEl = document.querySelector(".menu-toggle");
+      const sidebarEl = document.querySelector(".sidebar");
+      if (!menuToggleEl || !sidebarEl) return;
+      menuToggleEl.addEventListener("click", () => {
+        const isOpen = sidebarEl.classList.toggle("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", String(isOpen));
+      });
+      sidebarEl.addEventListener("click", (event) => {
+        const link = event.target.closest("a.submenu-item");
+        if (!link || window.matchMedia("(min-width: 821px)").matches) return;
+        sidebarEl.classList.remove("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    setupMobileMenu();
+    initializeOptions();
+    renderMetrics();
+    applyFilters();
+  </script>
+</body>
+</html>
