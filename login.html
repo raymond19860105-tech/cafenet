@@ -172,7 +172,7 @@
   </main>
 
   <script>
-    const allowedPages = new Set(["index.html", "game-list.html", "game-lobby-list.html", "member-account.html", "member-wallet.html", "member-labels.html", "agent-merchant.html", "agent-wallet.html", "agent-topup-request.html", "agent-topup-approval.html", "agent-auto-replenish.html", "agent-cash-statistics.html", "agent-revenue-report.html"]);
+    const allowedPages = new Set(["index.html", "game-list.html", "game-lobby-list.html", "member-account.html", "member-wallet.html", "member-labels.html", "agent-merchant.html", "agent-wallet.html", "agent-topup-request.html", "agent-topup-approval.html", "agent-auto-replenish.html", "agent-cash-statistics.html", "agent-revenue-report.html", "game-vendor-setting.html", "game-vendor-access.html"]);
     const params = new URLSearchParams(location.search);
     const next = allowedPages.has(params.get("next")) ? params.get("next") : "index.html";
 
