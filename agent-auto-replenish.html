@@ -13,6 +13,10 @@
     button { cursor: pointer; }
     .icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .app-shell { min-height: 100vh; display: grid; grid-template-columns: 208px minmax(0, 1fr); }
+     @media (min-width: 821px) {
+      .app-shell.sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+      .app-shell.sidebar-collapsed .sidebar { width: 0; overflow: hidden; border-right: 0; }
+    }
     .sidebar { background: #fff; border-right: 1px solid var(--line); position: relative; z-index: 20; }
     .sidebar-logo { padding: 10px 16px 8px; color: #5867d8; font-size: 38px; font-weight: 900; line-height: 1; }
     .sidebar-menu { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 16px; }
@@ -21,6 +25,7 @@
     .menu-drag { color: #7d858d; font-size: 16px; }
     .menu-badge, .submenu-badge { min-width: 28px; height: 20px; padding: 0 7px; border-radius: 999px; background: #d10000; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
     .submenu { padding: 4px 0 8px; }
+    .submenu[hidden] { display: none; }
     .submenu-item { justify-content: flex-start; gap: 10px; padding-left: 36px; position: relative; }
     .submenu-item.active { color: var(--blue); background: #e8eef5; }
     .app-main { min-width: 0; }
@@ -742,18 +747,83 @@
     document.getElementById("closeModal").addEventListener("click", closeModal);
     modalBackdropEl.addEventListener("click", closeModal);
     window.addEventListener("keydown", (event) => { if (event.key === "Escape") { closeDrawer(); closeModal(); } });
-    const menuToggleEl = document.querySelector(".menu-toggle");
-    const sidebarEl = document.querySelector(".sidebar");
-    menuToggleEl.addEventListener("click", () => {
-      const isOpen = sidebarEl.classList.toggle("is-mobile-open");
-      menuToggleEl.setAttribute("aria-expanded", String(isOpen));
-    });
-    sidebarEl.addEventListener("click", (event) => {
-      const link = event.target.closest("a.submenu-item");
-      if (!link || window.matchMedia("(min-width: 821px)").matches) return;
-      sidebarEl.classList.remove("is-mobile-open");
-      menuToggleEl.setAttribute("aria-expanded", "false");
-    });
+    function setupSidebarInteractions() {
+      const menuToggleEl = document.querySelector(".menu-toggle");
+      const sidebarEl = document.querySelector(".sidebar");
+      const shellEl = document.querySelector(".app-shell");
+      if (!menuToggleEl || !sidebarEl || !shellEl) return;
+
+      const desktopQuery = window.matchMedia("(min-width: 821px)");
+
+      function getMenuChevron(button) {
+        const candidates = Array.from(button.children).filter((child) => !child.classList.contains("menu-label") && !child.classList.contains("menu-badge"));
+        return candidates[candidates.length - 1] || null;
+      }
+
+      function setMenuExpanded(button, submenu, expanded) {
+        submenu.hidden = !expanded;
+        button.setAttribute("aria-expanded", String(expanded));
+        const chevron = getMenuChevron(button);
+        if (chevron) chevron.textContent = expanded ? "⌃" : "⌄";
+      }
+
+      sidebarEl.querySelectorAll(".sidebar-menu > .menu-item").forEach((button, index) => {
+        const submenu = button.nextElementSibling && button.nextElementSibling.classList.contains("submenu") ? button.nextElementSibling : null;
+        if (!submenu) {
+          button.removeAttribute("aria-expanded");
+          button.classList.add("is-empty");
+          const chevron = getMenuChevron(button);
+          if (chevron) chevron.textContent = "";
+          button.addEventListener("click", () => {
+            if (typeof showToast === "function") showToast("此分類尚未建立子選單", "warning");
+          });
+          return;
+        }
+        if (!submenu.id) submenu.id = "sidebar-submenu-" + index;
+        button.setAttribute("aria-controls", submenu.id);
+        setMenuExpanded(button, submenu, Boolean(submenu.querySelector(".submenu-item.active")));
+        button.addEventListener("click", () => {
+          setMenuExpanded(button, submenu, button.getAttribute("aria-expanded") !== "true");
+        });
+      });
+
+      function setSidebarExpanded(expanded) {
+        shellEl.classList.toggle("sidebar-collapsed", !expanded);
+        sidebarEl.classList.remove("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", String(expanded));
+      }
+
+      function syncToggleState() {
+        if (desktopQuery.matches) {
+          menuToggleEl.setAttribute("aria-expanded", String(!shellEl.classList.contains("sidebar-collapsed")));
+        } else {
+          shellEl.classList.remove("sidebar-collapsed");
+          menuToggleEl.setAttribute("aria-expanded", String(sidebarEl.classList.contains("is-mobile-open")));
+        }
+      }
+
+      menuToggleEl.addEventListener("click", () => {
+        if (desktopQuery.matches) {
+          setSidebarExpanded(shellEl.classList.contains("sidebar-collapsed"));
+          return;
+        }
+        const isOpen = sidebarEl.classList.toggle("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", String(isOpen));
+      });
+
+      sidebarEl.addEventListener("click", (event) => {
+        const link = event.target.closest("a.submenu-item");
+        if (!link || desktopQuery.matches) return;
+        sidebarEl.classList.remove("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", "false");
+      });
+
+      if (desktopQuery.addEventListener) desktopQuery.addEventListener("change", syncToggleState);
+      else desktopQuery.addListener(syncToggleState);
+      syncToggleState();
+    }
+
+    setupSidebarInteractions();
   </script>
 </body>
 </html>

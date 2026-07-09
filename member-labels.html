@@ -102,6 +102,17 @@
       background: #fff;
     }
 
+     @media (min-width: 821px) {
+      .app-shell.sidebar-collapsed .sidebar,
+      .admin-layout.sidebar-collapsed .sidebar {
+        width: 0;
+        flex: 0 0 0;
+        overflow: hidden;
+        border-right: 0;
+        box-shadow: none;
+      }
+    }
+
     .sidebar-logo {
       padding: 14px 16px 10px;
       color: #5867d8;
@@ -164,6 +175,10 @@
     .submenu {
       display: flex;
       flex-direction: column;
+    }
+
+    .submenu[hidden] {
+      display: none;
     }
 
     .submenu-item {
@@ -1346,20 +1361,80 @@
       if (remarkInput && remarkCounter) remarkCounter.textContent = `${remarkInput.value.length} / 200`;
     }
 
-    function setupMobileMenu() {
+    function setupSidebarInteractions() {
       const menuToggleEl = document.querySelector(".menu-toggle");
       const sidebarEl = document.querySelector(".sidebar");
-      if (!menuToggleEl || !sidebarEl) return;
+      const shellEl = document.querySelector(".app-shell");
+      if (!menuToggleEl || !sidebarEl || !shellEl) return;
+
+      const desktopQuery = window.matchMedia("(min-width: 821px)");
+
+      function getMenuChevron(button) {
+        const candidates = Array.from(button.children).filter((child) => !child.classList.contains("menu-label") && !child.classList.contains("menu-badge"));
+        return candidates[candidates.length - 1] || null;
+      }
+
+      function setMenuExpanded(button, submenu, expanded) {
+        submenu.hidden = !expanded;
+        button.setAttribute("aria-expanded", String(expanded));
+        const chevron = getMenuChevron(button);
+        if (chevron) chevron.textContent = expanded ? "⌃" : "⌄";
+      }
+
+      sidebarEl.querySelectorAll(".sidebar-menu > .menu-item").forEach((button, index) => {
+        const submenu = button.nextElementSibling && button.nextElementSibling.classList.contains("submenu") ? button.nextElementSibling : null;
+        if (!submenu) {
+          button.removeAttribute("aria-expanded");
+          button.classList.add("is-empty");
+          const chevron = getMenuChevron(button);
+          if (chevron) chevron.textContent = "";
+          button.addEventListener("click", () => {
+            if (typeof showToast === "function") showToast("此分類尚未建立子選單", "warning");
+          });
+          return;
+        }
+        if (!submenu.id) submenu.id = "sidebar-submenu-" + index;
+        button.setAttribute("aria-controls", submenu.id);
+        setMenuExpanded(button, submenu, Boolean(submenu.querySelector(".submenu-item.active")));
+        button.addEventListener("click", () => {
+          setMenuExpanded(button, submenu, button.getAttribute("aria-expanded") !== "true");
+        });
+      });
+
+      function setSidebarExpanded(expanded) {
+        shellEl.classList.toggle("sidebar-collapsed", !expanded);
+        sidebarEl.classList.remove("is-mobile-open");
+        menuToggleEl.setAttribute("aria-expanded", String(expanded));
+      }
+
+      function syncToggleState() {
+        if (desktopQuery.matches) {
+          menuToggleEl.setAttribute("aria-expanded", String(!shellEl.classList.contains("sidebar-collapsed")));
+        } else {
+          shellEl.classList.remove("sidebar-collapsed");
+          menuToggleEl.setAttribute("aria-expanded", String(sidebarEl.classList.contains("is-mobile-open")));
+        }
+      }
+
       menuToggleEl.addEventListener("click", () => {
+        if (desktopQuery.matches) {
+          setSidebarExpanded(shellEl.classList.contains("sidebar-collapsed"));
+          return;
+        }
         const isOpen = sidebarEl.classList.toggle("is-mobile-open");
         menuToggleEl.setAttribute("aria-expanded", String(isOpen));
       });
+
       sidebarEl.addEventListener("click", (event) => {
         const link = event.target.closest("a.submenu-item");
-        if (!link || window.matchMedia("(min-width: 821px)").matches) return;
+        if (!link || desktopQuery.matches) return;
         sidebarEl.classList.remove("is-mobile-open");
         menuToggleEl.setAttribute("aria-expanded", "false");
       });
+
+      if (desktopQuery.addEventListener) desktopQuery.addEventListener("change", syncToggleState);
+      else desktopQuery.addListener(syncToggleState);
+      syncToggleState();
     }
 
     form.addEventListener("submit", (event) => {
@@ -1424,7 +1499,7 @@
       if (event.key === "Escape") closeModal();
     });
 
-    setupMobileMenu();
+    setupSidebarInteractions();
     initializeOptions();
     renderMetrics();
     applyFilters();
