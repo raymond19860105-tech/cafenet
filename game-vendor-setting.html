@@ -81,46 +81,47 @@
     .button.icon { width: 34px; padding: 0; }
     .icon-svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .table-actions { margin: 0 0 10px; display: flex; justify-content: flex-end; }
-    .table-wrap { overflow: auto; max-height: calc(100vh - 250px); background: #fff; }
-    table { width: 100%; min-width: 1080px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-    th, td { border-right: 1px solid #e3e8ef; border-bottom: 1px solid #e3e8ef; padding: 12px 10px; text-align: center; vertical-align: middle; color: #5d656d; font-size: 14px; }
-    th { position: sticky; top: 0; z-index: 2; min-height: 46px; background: #eee; color: #5e6670; font-size: 13px; font-weight: 900; white-space: nowrap; }
+    .table-wrap { overflow: auto; max-height: calc(100vh - 230px); background: #fff; }
+    table { width: 100%; min-width: 900px; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    th, td { border-right: 1px solid #e3e8ef; border-bottom: 1px solid #e3e8ef; padding: 8px 8px; text-align: center; vertical-align: middle; color: #5d656d; font-size: 13px; }
+    th { position: sticky; top: 0; z-index: 2; min-height: 40px; background: #eee; color: #5e6670; font-size: 12px; font-weight: 900; white-space: nowrap; }
     tbody tr:nth-child(odd) td { background: #fff; }
     tbody tr:nth-child(even) td { background: #fbfbfc; }
     tbody tr.is-selected td { background: #eaf4ff; }
     .sortable::after { content: ""; display: inline-block; margin-left: 5px; vertical-align: middle; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid #c3ccd6; box-shadow: 0 -8px 0 -1px #c3ccd6; }
-    .copy-line { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 6px; line-height: 1.55; overflow-wrap: anywhere; }
-    .copy-button { width: 18px; height: 18px; border: 0; background: transparent; color: #4099ff; display: inline-grid; place-items: center; padding: 0; }
-    .copy-button::before, .copy-button::after { content: ""; position: absolute; width: 10px; height: 10px; border-radius: 2px; background: currentColor; opacity: .95; }
+    .copy-line { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 4px; line-height: 1.35; overflow-wrap: anywhere; }
+    .copy-line.is-compact { align-items: center; color: #7b8792; font-size: 11px; line-height: 1.2; }
+    .copy-button { width: 16px; height: 16px; border: 0; background: transparent; color: #4099ff; display: inline-grid; place-items: center; padding: 0; }
+    .copy-button::before, .copy-button::after { content: ""; position: absolute; width: 9px; height: 9px; border-radius: 2px; background: currentColor; opacity: .95; }
     .copy-button { position: relative; }
     .copy-button::before { transform: translate(-2px, 2px); opacity: .75; }
     .copy-button::after { transform: translate(2px, -2px); }
-    .identity-stack { display: grid; gap: 6px; text-align: left; }
-    .identity-name { color: #4c5661; font-weight: 900; line-height: 1.3; }
-    .config-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
-    .config-pill { min-height: 28px; padding: 4px 8px; border: 1px solid #d8dee6; border-radius: 999px; background: #f9fafb; color: #727982; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 900; }
-    .config-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .identity-stack { display: grid; gap: 4px; text-align: left; }
+    .identity-name { color: #4c5661; font-weight: 900; line-height: 1.2; }
+    .config-list { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; }
+    .config-pill { min-height: 24px; padding: 3px 7px; border: 1px solid #d8dee6; border-radius: 999px; background: #f9fafb; color: #727982; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 900; }
+    .config-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
     .config-pill.red::before { background: #ff7272; }
     .config-pill.blue::before { background: #51a8ff; }
     .config-pill.orange::before { background: #e59835; }
     .config-pill.gray::before { background: #9ca3af; }
     .config-pill.yellow::before { background: #f4d22b; }
-    .vendor-code { display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
-    .type-tag { min-width: 56px; min-height: 27px; padding: 5px 8px; border-radius: 6px; background: #1677ff; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; }
+    .vendor-code { display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+    .type-tag { min-width: 50px; min-height: 24px; padding: 4px 7px; border-radius: 5px; background: #1677ff; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; }
     .type-tag.live { background: var(--red); }
-    .switch { position: relative; display: inline-flex; width: 40px; height: 22px; }
+    .switch { position: relative; display: inline-flex; width: 36px; height: 20px; }
     .switch input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
     .switch span { width: 100%; height: 100%; border-radius: 999px; background: #d6dde7; transition: background .15s ease; }
-    .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: transform .15s ease; }
+    .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: transform .15s ease; }
     .switch input:checked + span { background: #2588f5; }
-    .switch input:checked + span::after { transform: translateX(18px); }
-    .sort-input { width: 56px; text-align: center; }
-    .inline-save { justify-content: center; gap: 6px; flex-wrap: nowrap; }
-    .inline-save .button { min-height: 30px; padding: 5px 8px; font-size: 13px; }
-    .state-stack { display: grid; justify-items: center; gap: 6px; }
-    .time-stack { display: grid; gap: 4px; text-align: left; line-height: 1.35; font-size: 12px; }
-    .time-stack span { display: block; white-space: normal; }
-    .time-label { color: #9aa4af; font-weight: 900; margin-right: 4px; }
+    .switch input:checked + span::after { transform: translateX(16px); }
+    .sort-input { width: 50px; min-height: 28px; padding: 4px 7px; text-align: center; }
+    .inline-save { justify-content: center; gap: 4px; flex-wrap: nowrap; }
+    .inline-save .button { min-height: 28px; padding: 4px 7px; font-size: 12px; }
+    .state-stack { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .time-stack { display: grid; gap: 2px; text-align: left; line-height: 1.28; font-size: 11px; }
+    .time-stack > span { display: block; white-space: normal; }
+    .time-label { display: inline; color: #9aa4af; font-weight: 900; margin-right: 4px; }
     .toast { position: fixed; right: 24px; bottom: 24px; z-index: 90; min-width: 180px; padding: 12px 16px; border-radius: 8px; background: #1f2937; color: #fff; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; }
     .toast.is-open { opacity: 1; transform: translateY(0); }
     .modal-backdrop { position: fixed; inset: 0; z-index: 60; display: none; background: rgba(0,0,0,.46); }
@@ -156,14 +157,14 @@
       .form-row label { text-align: left; }
       .filter-panel { grid-template-columns: 1fr; }
     }
-    .setting-table { min-width: 980px; }
-    .identity-col { width: 230px; }
-    .config-col { width: 220px; }
-    .code-col { width: 85px; }
-    .state-col { width: 110px; }
-    .sort-col { width: 112px; }
-    .time-col { width: 145px; }
-    .action-col { width: 76px; }
+    .setting-table { min-width: 900px; }
+    .identity-col { width: 210px; }
+    .config-col { width: 195px; }
+    .code-col { width: 76px; }
+    .state-col { width: 96px; }
+    .sort-col { width: 96px; }
+    .time-col { width: 132px; }
+    .action-col { width: 70px; }
   </style>
 </head>
 <body>
@@ -546,8 +547,9 @@
     }
     function configMarkup(configs) { return '<div class="config-list">' + configs.map((config) => '<span class="config-pill ' + escapeHtml(config.tone) + '">' + escapeHtml(config.name) + ' ' + escapeHtml(config.rate) + '%</span>').join("") + '</div>'; }
     function typeMarkup(type) { return '<span class="type-tag ' + (type.includes("真人") ? "live" : "") + '">' + escapeHtml(type) + '</span>'; }
-    function copyMarkup(text) { return '<span class="copy-line"><button class="copy-button" type="button" data-copy="' + escapeHtml(text) + '" aria-label="複製"></button><span>' + escapeHtml(text) + '</span></span>'; }
-    function identityMarkup(vendor) { return '<div class="identity-stack"><span class="identity-name">' + escapeHtml(vendor.name) + '</span>' + copyMarkup(vendor.id) + '</div>'; }
+    function shortId(value) { const text = String(value ?? ""); return text.length > 18 ? text.slice(0, 10) + "..." + text.slice(-6) : text; }
+    function copyMarkup(text, displayText = text, compact = false) { return '<span class="copy-line' + (compact ? ' is-compact' : '') + '"><button class="copy-button" type="button" data-copy="' + escapeHtml(text) + '" aria-label="複製"></button><span>' + escapeHtml(displayText) + '</span></span>'; }
+    function identityMarkup(vendor) { return '<div class="identity-stack"><span class="identity-name">' + escapeHtml(vendor.name) + '</span>' + copyMarkup(vendor.id, shortId(vendor.id), true) + '</div>'; }
     function stateMarkup(vendor) { return '<div class="state-stack"><label class="switch"><input type="checkbox" data-status="' + escapeHtml(vendor.id) + '" ' + (vendor.enabled ? 'checked' : '') + '><span></span></label>' + typeMarkup(vendor.type) + '</div>'; }
     function renderRows() {
       vendorRowsEl.innerHTML = filteredVendors.map((vendor, index) => '<tr class="' + (index === 0 ? 'is-selected' : '') + '">' +
